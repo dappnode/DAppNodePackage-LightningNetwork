@@ -1,0 +1,5 @@
+version: '3.4'
+services:
+    lnd.dnp.dappnode.eth:
+        build: ./build
+        image: lnd.dnp.dappnode.eth:0.0.1

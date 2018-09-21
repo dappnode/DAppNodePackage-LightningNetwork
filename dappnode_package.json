@@ -1,0 +1,42 @@
+{
+  "name": "lnd.public.dappnode.eth",
+  "version": "0.0.1",
+  "description": "The Lightning Network Daemon (development package)",
+  "avatar": "/ipfs/",
+  "type": "service",
+  "image": {
+    "path": "lnd.public.dappnode.eth_0.0.1.tar.xz",
+    "hash": "/ipfs/",
+    "size": "",
+    "ports": [
+      "9735:9735"
+    ],
+    "volumes": [
+      "lnd_rpc_data:/rpc"
+    ],
+    "environment": [
+      "BTC_RPCUSER",
+      "BTC_RPCPASSWORD",
+      "BTC_TXINDEX=1"
+    ]
+  },
+  "author": "Abel Boldú (vdo)",
+  "keywords": [
+    "bitcoin",
+    "btc",
+    "lightning network",
+    "lnd"
+  ],
+  "homepage": {
+    "homepage": "https://lightning.network"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "bugs": {
+    "url": ""
+  },
+  "license": "GPL-3.0",
+  "dependencies": {}
+}
