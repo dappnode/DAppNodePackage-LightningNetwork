@@ -40,15 +40,14 @@ set_default() {
 
 # Set default variables if needed.
 BITCOIND_HOST=$(set_default "$BITCOIND_HOST" "127.0.0.1")
-RPCUSER=$(set_default "$RPCUSER" "devuser")
-RPCPASS=$(set_default "$RPCPASS" "devpass")
+RPCUSER=$(set_default "$RPCUSER" "rpcuser")
+RPCPASS=$(set_default "$RPCPASS" "rpcpass")
 DEBUG=$(set_default "$DEBUG" "debug")
 NETWORK=$(set_default "$NETWORK" "testnet")
 CHAIN=$(set_default "$CHAIN" "bitcoin")
 BACKEND="bitcoind"
 
-# Use service to guess external IP if not provided (?)
-# curl ident.me
+EXT_IP=`curl -4s ident.me`
 
 exec lnd \
     --noseedbackup \

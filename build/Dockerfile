@@ -13,7 +13,7 @@ EXPOSE 9735 10009
 
 # Add bash.
 RUN apk add --no-cache \
-    bash
+    bash curl
 
 # Copy the entrypoint script.
 COPY "start-lnd.sh" .

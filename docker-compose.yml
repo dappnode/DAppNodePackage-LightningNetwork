@@ -1,5 +1,5 @@
 version: '3.4'
 services:
-    lnd.dnp.dappnode.eth:
+    lnd.public.dappnode.eth:
         build: ./build
-        image: lnd.dnp.dappnode.eth:0.0.1
+        image: lnd.public.dappnode.eth:0.0.1
