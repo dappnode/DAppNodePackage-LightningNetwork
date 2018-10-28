@@ -3,3 +3,6 @@ services:
     lnd.public.dappnode.eth:
         build: ./build
         image: lnd.public.dappnode.eth:0.0.1
+        environment:
+                - "BITCOIND_HOST=5.39.174.116"
+                - "NETWORK=mainnet"

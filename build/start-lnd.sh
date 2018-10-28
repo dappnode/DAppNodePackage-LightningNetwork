@@ -38,6 +38,18 @@ set_default() {
    return "$VARIABLE"
 }
 
+# Generate P-256 curve certificates needed for lncli-web
+if [ ! -f /$HOME/.lnd/tls.key ]; then 
+    openssl ecparam -genkey -name prime256v1 -out tls.key
+    openssl req -new -sha256 -key tls.key -out csr.csr -subj '/CN=localhost/O=lnd'
+    openssl req -x509 -sha256 -days 36500 -key tls.key -in csr.csr -out tls.cert
+    rm csr.csr
+fi
+
+if [ -z $EXT_IP ]; then
+    EXT_IP=`curl -4s ident.me`
+fi
+
 # Set default variables if needed.
 BITCOIND_HOST=$(set_default "$BITCOIND_HOST" "127.0.0.1")
 RPCUSER=$(set_default "$RPCUSER" "rpcuser")
@@ -47,7 +59,11 @@ NETWORK=$(set_default "$NETWORK" "testnet")
 CHAIN=$(set_default "$CHAIN" "bitcoin")
 BACKEND="bitcoind"
 
-EXT_IP=`curl -4s ident.me`
+# Symlink for lncli-web
+if [ ! -f /$HOME/.lnd/admin.macaroon ]; then 
+    mkdir -p /$HOME/.lnd/data/chain/$CHAIN/$NETWORK/
+    ln -s /$HOME/.lnd/admin.macaroon /$HOME/.lnd/data/chain/$CHAIN/$NETWORK/admin.macaroon
+fi
 
 exec lnd \
     --noseedbackup \
@@ -61,5 +77,6 @@ exec lnd \
     "--$BACKEND.zmqpubrawblock=tcp://$BITCOIND_HOST:28332" \
     "--bitcoind.zmqpubrawtx=tcp://$BITCOIND_HOST:28333" \
     "--externalip=$EXT_IP" \
+    "--alias=$ALIAS" \
     --debuglevel="$DEBUG" \
     "$@"

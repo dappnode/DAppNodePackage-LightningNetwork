@@ -1,4 +1,4 @@
-FROM alpine
+FROM node:alpine
 
 ENV VERSION "0.5-beta"
 
@@ -9,14 +9,28 @@ RUN apk add --no-cache wget ca-certificates \
  && apk del wget ca-certificates
 
 # Expose lnd ports (server, rpc).
-EXPOSE 9735 10009
+EXPOSE 9735 10009 8280
 
-# Add bash.
+# Add requirements
 RUN apk add --no-cache \
-    bash curl
+    bash curl openssl supervisor
 
-# Copy the entrypoint script.
 COPY "start-lnd.sh" .
 RUN chmod +x start-lnd.sh
 
-ENTRYPOINT ["./start-lnd.sh"]
+COPY lncli-web/ /lncli-web
+
+WORKDIR /lncli-web
+
+RUN npm install \
+&&  ./node_modules/.bin/gulp bundles
+
+RUN ln -s /root/.lnd /config
+
+COPY "start-lncli-web.sh" .
+RUN chmod +x start-lncli-web.sh
+
+RUN mkdir -p /var/log/supervisor
+COPY supervisord.conf .
+
+CMD ["supervisord"]
