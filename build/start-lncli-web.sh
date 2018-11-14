@@ -42,10 +42,9 @@ done
 
 cd /lncli-web
 
-LNDHOST=${SET_LNDHOST:-localhost}
+LNDHOST=${SET_LNDHOST:-localhost:10009}
 echo "Waiting for LND..."
-while ! nc -z $LNDHOST ; do sleep 1 ; done
-echo "LND is up"
+./wait-for-it.sh $LNDHOST --timeout=60 --strict -- echo "LND is up"
 
 echo "launching server with $opts"
 node server $opts

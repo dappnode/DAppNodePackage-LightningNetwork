@@ -6,7 +6,7 @@
   "type": "service",
   "image": {
     "path": "lnd.public.dappnode.eth_0.0.1.tar.xz",
-    "hash": "/ipfs/QmXpCLSVi3pZwejzJbtrnAAWBmYSHUDQMZmgh3M1A9j76V",
+    "hash": "/ipfs/QmaxgmhcCQdkbKB8qKqfiQeeF3uLQPM9KDVtKhSD6aEfzx",
     "size": "203658264",
     "ports": [
       "9735:9735"      
@@ -42,5 +42,7 @@
     "url": ""
   },
   "license": "GPL-3.0",
-  "dependencies": {}
+  "dependencies": {
+   "bitcoind.dnp.dappnode.eth": "/ipfs/QmdoQffVPV9y7N1uW6eBiPHZ9S4MvpyS2ucUZtzb8bKAb4"
+  }
 }

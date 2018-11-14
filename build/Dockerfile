@@ -28,7 +28,9 @@ RUN npm install \
 RUN ln -s /root/.lnd /config
 
 COPY "start-lncli-web.sh" .
+COPY "wait-for-it.sh" .
 RUN chmod +x start-lncli-web.sh
+RUN chmod +x wait-for-it.sh
 
 RUN mkdir -p /var/log/supervisor
 COPY supervisord.conf .
