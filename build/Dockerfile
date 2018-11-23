@@ -1,24 +1,25 @@
 FROM node:alpine
 
-ENV VERSION "0.5-beta"
+ENV LND_VERSION "0.5-beta"
+ENV LNCLI_WEB_TAG "master"
 
 RUN apk add --no-cache wget ca-certificates \
- && wget https://github.com/lightningnetwork/lnd/releases/download/v${VERSION}/lnd-linux-amd64-v${VERSION}.tar.gz \
- && tar --strip-components 1 -xzf  lnd-linux-amd64-v${VERSION}.tar.gz -C /bin/ \
- && rm lnd-linux-amd64-v${VERSION}.tar.gz \
+ && wget https://github.com/lightningnetwork/lnd/releases/download/v${LND_VERSION}/lnd-linux-amd64-v${LND_VERSION}.tar.gz \
+ && tar --strip-components 1 -xzf  lnd-linux-amd64-v${LND_VERSION}.tar.gz -C /bin/ \
+ && rm lnd-linux-amd64-v${LND_VERSION}.tar.gz \
  && apk del wget ca-certificates
 
 # Expose lnd ports (server, rpc).
-EXPOSE 9735 10009 8280
+EXPOSE 9735 10009 80
 
 # Add requirements
 RUN apk add --no-cache \
-    bash curl openssl supervisor
+    bash curl openssl supervisor git
 
 COPY "start-lnd.sh" .
 RUN chmod +x start-lnd.sh
 
-COPY lncli-web/ /lncli-web
+RUN git clone -b $LNCLI_WEB_TAG https://github.com/mably/lncli-web.git /lncli-web
 
 WORKDIR /lncli-web
 

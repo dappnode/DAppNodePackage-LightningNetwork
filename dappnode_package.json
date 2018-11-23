@@ -6,8 +6,8 @@
   "type": "service",
   "image": {
     "path": "lnd.public.dappnode.eth_0.0.1.tar.xz",
-    "hash": "/ipfs/QmaxgmhcCQdkbKB8qKqfiQeeF3uLQPM9KDVtKhSD6aEfzx",
-    "size": "203658264",
+    "hash": "/ipfs/QmaUn2Ag1utYinuR7zf7UFdoqccq6drd3X7t8u2LDHfYZS",
+    "size": "207219904",
     "ports": [
       "9735:9735"      
     ],

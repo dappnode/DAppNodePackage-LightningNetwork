@@ -4,7 +4,7 @@ set -e
 files=("admin.macaroon" "tls.cert")
 overrides=("SET_SERVERPORT" "SET_SERVERHOST" "SET_LNDHOST" "SET_USETLS" "SET_USER" "SET_PWD"  \
            "SET_LIMITUSER" "SET_LIMITPWD" "SET_LOGFILE" "SET_LOGLEVEL" "SET_LNDLOGFILE" "SET_LE_EMAIL")
-defaultopts=""
+defaultopts="-s 80"
 config="/lncli-web/config/defaults.js"
 
 # if /config has any files in the array above, point config.js there.
