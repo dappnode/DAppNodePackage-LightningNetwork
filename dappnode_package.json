@@ -2,21 +2,26 @@
   "name": "lnd.public.dappnode.eth",
   "version": "0.0.1",
   "description": "The Lightning Network Daemon (development package)",
-  "avatar": "/ipfs/QmRf2cUDsfNNmG7rbfewKwQhWokn9QQ4Xbcbo8kWWxzm78",
+  "avatar": "/ipfs/QmVrjV1ANxjYVqRJzycYKcCUAH8nU337UsMVir1CnZYNa8",
   "type": "service",
   "image": {
     "path": "lnd.public.dappnode.eth_0.0.1.tar.xz",
-    "hash": "/ipfs/QmUosrfk7APt9ikbEn97PTtdDTRkPk4n8cRxRQJYSfxJXd",
-    "size": "18447568",
+    "hash": "/ipfs/QmaUn2Ag1utYinuR7zf7UFdoqccq6drd3X7t8u2LDHfYZS",
+    "size": "207219904",
     "ports": [
-      "9735:9735"
+      "9735:9735"      
     ],
-    "volumes": [],
+    "volumes": [
+      "lndconfig_data:/root/.lnd/"
+    ],
     "environment": [
       "RPCUSER=dappnode",
       "RPCPASS=dappnode",
       "BITCOIND_HOST=my.bitcoind.dnp.dappnode.eth",
-      "NETWORK=mainnet"
+      "NETWORK=mainnet",
+      "SET_SERVERHOST=0.0.0.0",
+      "ALIAS=",
+      "EXT_IP="
     ]
   },
   "author": "Abel Boldú (vdo)",
@@ -37,5 +42,7 @@
     "url": ""
   },
   "license": "GPL-3.0",
-  "dependencies": {}
+  "dependencies": {
+   "bitcoind.dnp.dappnode.eth": "/ipfs/QmdoQffVPV9y7N1uW6eBiPHZ9S4MvpyS2ucUZtzb8bKAb4"
+  }
 }
