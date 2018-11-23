@@ -1,3 +1,0 @@
-[submodule "build/lncli-web"]
-	path = build/lncli-web
-	url = https://github.com/mably/lncli-web.git
