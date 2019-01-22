@@ -1,7 +1,7 @@
 version: '3.4'
 services:
-    lnd.dnp.dappnode.eth:
-        image: 'ln.dnp.dappnode.eth:0.1.0'
+    ln.dnp.dappnode.eth:
+        image: 'ln.dnp.dappnode.eth:0.1.1'
         build: ./build
         volumes:
             - 'lndconfig_data:/root/.lnd/'
@@ -15,6 +15,5 @@ services:
             - SET_SERVERHOST=0.0.0.0
             - ALIAS=
             - EXT_IP=
-
 volumes:
     lndconfig_data: {}
