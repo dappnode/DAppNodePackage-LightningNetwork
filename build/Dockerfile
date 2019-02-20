@@ -1,4 +1,4 @@
-FROM node:8.15.0-alpine as build
+FROM node:10.14.2-alpine as build
 
 ENV LND_VERSION "v0.5.2-beta"
 ENV LNCLI_WEB_TAG "master"
