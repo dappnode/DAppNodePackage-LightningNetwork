@@ -1,6 +1,6 @@
 FROM node:8.15.0-alpine as build
 
-ENV LND_VERSION "v0.5.1-beta"
+ENV LND_VERSION "v0.5.2-beta"
 ENV LNCLI_WEB_TAG "master"
 
 RUN apk add --no-cache wget ca-certificates \
