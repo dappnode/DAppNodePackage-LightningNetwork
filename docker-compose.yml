@@ -1,7 +1,7 @@
 version: '3.4'
 services:
-    ln.dnp.dappnode.eth:
-        image: 'ln.dnp.dappnode.eth:0.1.1'
+    lightning-network.dnp.dappnode.eth:
+        image: 'lightning-network.dnp.dappnode.eth:0.1.0'
         build: ./build
         volumes:
             - 'lndconfig_data:/root/.lnd/'
@@ -10,6 +10,8 @@ services:
         environment:
             - RPCUSER=dappnode
             - RPCPASS=dappnode
+            - WEB_USER=LND_ADMIN
+            - WEB_PASSWORD=_CHANGEME_
             - BITCOIND_HOST=my.bitcoin.dnp.dappnode.eth
             - NETWORK=mainnet
             - SET_SERVERHOST=0.0.0.0

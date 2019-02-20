@@ -43,6 +43,12 @@ done
 cd /lncli-web
 
 LNDHOST=${SET_LNDHOST:-localhost:10009}
+
+#Add user and password for the AdminUI
+USER=${WEB_USER}
+PASSWORD=${WEB_PASSWORD}
+opts+=" -u $USER -p $PASSWORD"
+
 echo "Waiting for LND..."
 ./wait-for-it.sh $LNDHOST --timeout=60 --strict -- echo "LND is up"
 
