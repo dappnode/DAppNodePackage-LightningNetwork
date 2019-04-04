@@ -78,5 +78,6 @@ exec lnd \
     "--bitcoind.zmqpubrawtx=tcp://$BITCOIND_HOST:28333" \
     "--externalip=$EXT_IP" \
     "--alias=$ALIAS" \
+    "--restlisten=localhost:8080" \
     --debuglevel="$DEBUG" \
     "$@"

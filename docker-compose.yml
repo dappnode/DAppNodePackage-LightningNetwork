@@ -10,8 +10,6 @@ services:
         environment:
             - RPCUSER=dappnode
             - RPCPASS=dappnode
-            - WEB_USER=LND_ADMIN
-            - WEB_PASSWORD=_CHANGEME_
             - BITCOIND_HOST=my.bitcoin.dnp.dappnode.eth
             - NETWORK=mainnet
             - SET_SERVERHOST=0.0.0.0
