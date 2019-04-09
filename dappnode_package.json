@@ -15,6 +15,7 @@
       "lndconfig_data:/root/.lnd/"
     ],
     "environment": [
+      "RTL_PASSWORD=changeme",
       "RPCUSER=dappnode",
       "RPCPASS=dappnode",
       "BITCOIND_HOST=my.bitcoin.dnp.dappnode.eth",

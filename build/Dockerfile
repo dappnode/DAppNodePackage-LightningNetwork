@@ -25,14 +25,14 @@ FROM alpine
 WORKDIR /rtl
 
 # Add requirements
-RUN apk add --no-cache supervisor bash curl nodejs openssl
+RUN apk add --no-cache supervisor bash curl nodejs openssl gettext
 
 COPY --from=build /rtl /rtl
 COPY --from=build /bin/lnd /bin/lnd
 
 COPY src/scripts/start-lnd.sh /
-#COPY src/scripts/start-rtl.sh /rtl
-COPY src/config/RTL.conf /rtl
+COPY src/scripts/start-rtl.sh /rtl
+COPY src/config/source_RTL.conf /rtl
 
 RUN ln -s /root/.lnd /config
 
