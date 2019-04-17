@@ -1,7 +1,7 @@
-FROM node:10.14.2-alpine as build
+FROM node:10.15.3-alpine as build
 
-ENV LND_VERSION "v0.5.2-beta"
-ENV RTL_TAG "v0.2.15"
+ENV LND_VERSION "v0.6-beta"
+ENV RTL_TAG "v0.3.0"
 
 RUN apk add --no-cache wget ca-certificates \
  && wget https://github.com/lightningnetwork/lnd/releases/download/${LND_VERSION}/lnd-linux-amd64-${LND_VERSION}.tar.gz \
