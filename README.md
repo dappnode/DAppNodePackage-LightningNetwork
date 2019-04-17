@@ -14,7 +14,7 @@ Both LND and RTL are beta software. Don't be completely #reckless.
 It is recommended to save backups every time you update the package, or even from time to time with a cron job.
 For many reasons we don't save any seed to restore the wallet, and having an up to date backup is crucial to not lose any funds in case something bad happens.
 
-# Backup LDN data
+# Backup LND data
 
 LND data is stored permanently in a docker volume, but it is recommended to save it apart in case of an update or migration.
 Follow this steps:
