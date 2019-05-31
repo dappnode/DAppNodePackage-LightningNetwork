@@ -1,13 +1,13 @@
 {
   "name": "lightning-network.dnp.dappnode.eth",
   "version": "0.1.0",
-  "description": "The Lightning Network DAppNodePackage (lnd + lncli-web). The Lightning Network is a decentralized system for instant, high-volume micropayments that removes the risk of delegating custody of funds to trusted third parties.",
+  "description": "The Lightning Network DAppNodePackage (lnd + RTL). The Lightning Network is a decentralized system for instant, high-volume micropayments that removes the risk of delegating custody of funds to trusted third parties.",
   "avatar": "/ipfs/QmVrjV1ANxjYVqRJzycYKcCUAH8nU337UsMVir1CnZYNa8",
   "type": "service",
   "image": {
-    "path": "",
-    "hash": "",
-    "size": "",
+    "path": "lightning-network.dnp.dappnode.eth_0.1.0.tar.xz",
+    "hash": "/ipfs/QmRUypuKnkAwQq9YCEqMGVQEpvmT3jifU6s3UFhAyo8Dkp",
+    "size": "65707744",
     "ports": [
       "9735:9735"
     ],
@@ -15,14 +15,13 @@
       "lndconfig_data:/root/.lnd/"
     ],
     "environment": [
+      "RTL_PASSWORD=changeme",
       "RPCUSER=dappnode",
       "RPCPASS=dappnode",
-      "WEB_USER=LND_ADMIN",
-      "WEB_PASSWORD=_CHANGEME_",
       "BITCOIND_HOST=my.bitcoin.dnp.dappnode.eth",
       "NETWORK=mainnet",
-      "SET_SERVERHOST=0.0.0.0",
       "ALIAS=",
+      "COLOR=#5ACDC5",
       "EXT_IP="
     ]
   },

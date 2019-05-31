@@ -1,7 +1,7 @@
-FROM node:10.14.2-alpine as build
+FROM node:10.15.3-alpine as build
 
-ENV LND_VERSION "v0.5.2-beta"
-ENV LNCLI_WEB_TAG "master"
+ENV LND_VERSION "v0.6.1-beta"
+ENV RTL_TAG "v0.4.1"
 
 RUN apk add --no-cache wget ca-certificates \
  && wget https://github.com/lightningnetwork/lnd/releases/download/${LND_VERSION}/lnd-linux-amd64-${LND_VERSION}.tar.gz \
@@ -9,30 +9,30 @@ RUN apk add --no-cache wget ca-certificates \
  && rm lnd-linux-amd64-${LND_VERSION}.tar.gz \
  && apk del wget ca-certificates
 
-# Add requirements
+# Add build requirements
 RUN apk add --no-cache \
     bash curl openssl supervisor git make g++
 
-RUN git clone -b $LNCLI_WEB_TAG https://github.com/mably/lncli-web.git /lncli-web
+RUN git clone -b $RTL_TAG https://github.com/ShahanaFarooqui/RTL.git /rtl
 
-WORKDIR /lncli-web
+WORKDIR /rtl
 
-RUN npm install &&  ./node_modules/.bin/gulp bundles
+RUN npm install
 RUN rm -rf ./node_modules/* &&  npm install --only=production
 
 FROM alpine
 
-WORKDIR /lncli-web
+WORKDIR /rtl
 
 # Add requirements
-RUN apk add --no-cache supervisor bash curl nodejs openssl
+RUN apk add --no-cache supervisor bash curl nodejs openssl gettext
 
-COPY --from=build /lncli-web /lncli-web
+COPY --from=build /rtl /rtl
 COPY --from=build /bin/lnd /bin/lnd
 
 COPY src/scripts/start-lnd.sh /
-COPY src/scripts/start-lncli-web.sh /lncli-web
-COPY src/scripts/wait-for-it.sh /lncli-web
+COPY src/scripts/start-rtl.sh /rtl
+COPY src/config/source_RTL.conf /rtl
 
 RUN ln -s /root/.lnd /config
 
