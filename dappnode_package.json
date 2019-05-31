@@ -5,9 +5,9 @@
   "avatar": "/ipfs/QmVrjV1ANxjYVqRJzycYKcCUAH8nU337UsMVir1CnZYNa8",
   "type": "service",
   "image": {
-    "path": "",
-    "hash": "",
-    "size": "",
+    "path": "lightning-network.dnp.dappnode.eth_0.1.0.tar.xz",
+    "hash": "/ipfs/QmRUypuKnkAwQq9YCEqMGVQEpvmT3jifU6s3UFhAyo8Dkp",
+    "size": "65707744",
     "ports": [
       "9735:9735"
     ],
@@ -20,8 +20,8 @@
       "RPCPASS=dappnode",
       "BITCOIND_HOST=my.bitcoin.dnp.dappnode.eth",
       "NETWORK=mainnet",
-      "SET_SERVERHOST=0.0.0.0",
       "ALIAS=",
+      "COLOR=#5ACDC5",
       "EXT_IP="
     ]
   },

@@ -12,7 +12,6 @@ services:
             - RPCPASS=dappnode
             - BITCOIND_HOST=my.bitcoin.dnp.dappnode.eth
             - NETWORK=mainnet
-            - SET_SERVERHOST=0.0.0.0
             - ALIAS=
             - EXT_IP=
 volumes:

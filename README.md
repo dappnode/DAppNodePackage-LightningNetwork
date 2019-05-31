@@ -78,8 +78,8 @@ You can edit the `docker-compose.yml` and add extra options, such a:
 | RPCPASS | dappnode |
 | BITCOIND_HOST | my.bitcoin.dnp.dappnode.eth |
 | NETWORK | mainnet |
-| SET_SERVERHOST | 0.0.0.0 |
 | ALIAS |  |
+| COLOR |  |
 | EXT_IP |  |
 
 ## License
