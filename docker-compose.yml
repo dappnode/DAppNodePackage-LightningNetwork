@@ -1,7 +1,7 @@
 version: '3.4'
 services:
     lightning-network.dnp.dappnode.eth:
-        image: 'lightning-network.dnp.dappnode.eth:0.1.0'
+        image: 'lightning-network.dnp.dappnode.eth:0.0.1'
         build: ./build
         volumes:
             - 'lndconfig_data:/root/.lnd/'
