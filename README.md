@@ -108,6 +108,10 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
  
 * When updating this package, volumes will not be affected. You can access an updated version of your LN node witbout risk of losing any funds. Do not remove the volume though, or you will lose the funds on your node if you have not followed ths instructions for backup.
 
+## Accessing the ADMIN UI
+
+Once the node is synced, you can access your LN node [admin UI here](https://lightning-network.dappnode)
+
 ## How to download macaroons
 
 Usually Lightning Network applications require files called *macaroons* for authorizations to perform operations on the LND node. There are many types depending on the level of access.
@@ -121,10 +125,6 @@ Then input in the "Download from DNP" field:
 ```
 /config/data/chain/bitcoin/mainnet/admin.macaroon
 ```
-
-## Accessing the ADMIN UI
-
-You can access your LN node [admin UI here](https://lightning-network.dappnode)
 
 ## How to use Joule extension with DAppNode
 
@@ -144,28 +144,8 @@ Joule is an extension available for many browsers which lets you use your node t
 
 * Upload the macaroons, choose a password to encrypt the data, and you're ready to go!
 
-## Backups
 
-LND data is stored permanently in a docker volume, but it is recommended to save it apart as a generally good security practise.
-
-For now, this feature is not implemented yet in the DAppNode interface, so it needs to be done manually from the command line of your DAppNode server.
-
-Follow this steps:
-
-```
-docker run --rm --volumes-from DAppNodePackage-lightning-network.dnp.dappnode.eth -v $(pwd):/backup alpine tar cvzf /backup/backup_lnd.tar.gz /root/.lnd
-```
-A file named `backup_lnd.tar.gz` will be created in your current path. It is also recommended to save a copy of it in another host.
-
-To restore it, proceed as follows. First stop the Lightning package and then run:
-```
-docker run --rm --volumes-from DAppNodePackage-lightning-network.dnp.dappnode.eth -v $(pwd):/backup alpine sh -c "cd /root/.lnd && tar xvzf /backup/backup_lnd.tar.gz --strip 2"
-    
-```
-
-Then start the package from the admin interface.
-
-* **Enjoy!** But be aware both LND and RTL are beta software .Only use funds you can  afford to lose.  Don't be completely #Reckless ;)
+* **Enjoy!** But be aware both LND and RTL are beta software .Only use funds you can afford to lose.  Don't be completely #Reckless ;)
 
 
 
