@@ -8,11 +8,13 @@ services:
         ports:
             - '9735:9735'
         environment:
+            - RTL_PASSWORD=changeme
             - RPCUSER=dappnode
             - RPCPASS=dappnode
             - BITCOIND_HOST=my.bitcoin.dnp.dappnode.eth
             - NETWORK=mainnet
             - ALIAS=
+            - COLOR=#5ACDC5
             - EXT_IP=
 volumes:
     lndconfig_data: {}
