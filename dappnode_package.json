@@ -1,6 +1,6 @@
 {
   "name": "lightning-network.dnp.dappnode.eth",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "The Lightning Network DAppNodePackage (lnd + RTL). The Lightning Network is a decentralized system for instant, high-volume micropayments that removes the risk of delegating custody of funds to trusted third parties.",
   "avatar": "/ipfs/QmVrjV1ANxjYVqRJzycYKcCUAH8nU337UsMVir1CnZYNa8",
   "type": "service",
@@ -8,12 +8,8 @@
     "path": "",
     "hash": "",
     "size": "",
-    "ports": [
-      "9735:9735"
-    ],
-    "volumes": [
-      "lndconfig_data:/root/.lnd/"
-    ],
+    "ports": ["9735:9735"],
+    "volumes": ["lndconfig_data:/root/.lnd/"],
     "restart": "always",
     "environment": [
       "RTL_PASSWORD=changeme",
@@ -26,6 +22,7 @@
       "EXT_IP="
     ]
   },
+  "backup": [{ "name": "data", "path": "/root/.lnd/data" }],
   "author": "DAppNode Association <admin@dappnode.io> (https://github.com/dappnode)",
   "contributors": [
     "Abel Boldú (@vdo)",

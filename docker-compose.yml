@@ -1,20 +1,20 @@
 version: '3.4'
 services:
-    lightning-network.dnp.dappnode.eth:
-        image: 'lightning-network.dnp.dappnode.eth:0.0.1'
-        build: ./build
-        volumes:
-            - 'lndconfig_data:/root/.lnd/'
-        ports:
-            - '9735:9735'
-        environment:
-            - RTL_PASSWORD=changeme
-            - RPCUSER=dappnode
-            - RPCPASS=dappnode
-            - BITCOIND_HOST=my.bitcoin.dnp.dappnode.eth
-            - NETWORK=mainnet
-            - ALIAS=
-            - COLOR=#5ACDC5
-            - EXT_IP=
+  lightning-network.dnp.dappnode.eth:
+    image: 'lightning-network.dnp.dappnode.eth:0.0.3'
+    build: ./build
+    volumes:
+      - 'lndconfig_data:/root/.lnd/'
+    ports:
+      - '9735:9735'
+    environment:
+      - RTL_PASSWORD=changeme
+      - RPCUSER=dappnode
+      - RPCPASS=dappnode
+      - BITCOIND_HOST=my.bitcoin.dnp.dappnode.eth
+      - NETWORK=mainnet
+      - ALIAS=
+      - 'COLOR=#5ACDC5'
+      - EXT_IP=
 volumes:
-    lndconfig_data: {}
+  lndconfig_data: {}
