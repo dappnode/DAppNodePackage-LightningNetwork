@@ -14,6 +14,7 @@
     "volumes": [
       "lndconfig_data:/root/.lnd/"
     ],
+    "restart": "always",
     "environment": [
       "RTL_PASSWORD=changeme",
       "RPCUSER=dappnode",
