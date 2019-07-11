@@ -8,8 +8,12 @@
     "path": "",
     "hash": "",
     "size": "",
-    "ports": ["9735:9735"],
-    "volumes": ["lndconfig_data:/root/.lnd/"],
+    "ports": [
+      "9735:9735"
+    ],
+    "volumes": [
+      "lndconfig_data:/root/.lnd/"
+    ],
     "restart": "always",
     "environment": [
       "RTL_PASSWORD=changeme",
@@ -22,15 +26,27 @@
       "EXT_IP="
     ]
   },
-  "backup": [{ "name": "data", "path": "/root/.lnd/data" }],
+  "backup": [
+    {
+      "name": "data",
+      "path": "/root/.lnd/data"
+    }
+  ],
   "author": "DAppNode Association <admin@dappnode.io> (https://github.com/dappnode)",
   "contributors": [
     "Abel Boldú (@vdo)",
     "Eduardo Antuña <eduadiez@gmail.com> (https://github.com/eduadiez)"
   ],
-  "keywords": ["bitcoin", "btc", "lightning network", "lnd"],
-  "homepage": {
-    "homepage": "https://github.com/dappnode/DAppNodePackage-LightningNetwork#readme"
+  "keywords": [
+    "bitcoin",
+    "btc",
+    "lightning network",
+    "lnd"
+  ],
+  "links": {
+    "WebUI": "http://lightning-network.dappnode",
+    "API": "http://lightning-network.dappnode:8080",
+    "readme": "https://github.com/dappnode/DAppNodePackage-LightningNetwork#readme"
   },
   "repository": {
     "type": "git",
