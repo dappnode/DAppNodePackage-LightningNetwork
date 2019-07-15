@@ -4,7 +4,7 @@
   "upstreamVersion": "0.6.1-beta",
   "shortDescription": "Scalable, instant Bitcoin/Blockchain transactions",
   "description": "The Lightning Network DAppNodePackage (lnd + RTL). The Lightning Network is a decentralized system for instant, high-volume micropayments that removes the risk of delegating custody of funds to trusted third parties.",
-  "avatar": "/ipfs/QmVrjV1ANxjYVqRJzycYKcCUAH8nU337UsMVir1CnZYNa8",
+  "avatar": "/ipfs/QmYjbpLBEbPDoiJwTcWjhuHuL1Ax2HuArhXRF4Fi95HT6c",
   "type": "service",
   "image": {
     "path": "",
