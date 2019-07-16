@@ -1,6 +1,6 @@
 FROM node:10.15.3-alpine as build
 
-ENV LND_VERSION "v0.6.1-beta"
+ENV LND_VERSION "v0.7.0-beta"
 ENV RTL_TAG "v0.4.2"
 
 RUN apk add --no-cache wget ca-certificates \
