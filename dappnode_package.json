@@ -2,8 +2,8 @@
   "name": "lightning-network.dnp.dappnode.eth",
   "version": "0.0.3",
   "upstreamVersion": "v0.7.0-beta",
-  "shortDescription": "Scalable, instant Bitcoin/Blockchain transactions",
-  "description": "The Lightning Network DAppNodePackage (lnd + RTL). The Lightning Network is a decentralized system for instant, high-volume micropayments that removes the risk of delegating custody of funds to trusted third parties.",
+  "shortDescription": "Scalable, instant Bitcoin transactions",
+  "description": "The Lightning Network DAppNodePackage (lnd + RTL). The Lightning Network is a decentralized system for instant, high-volume micropayments that remove the risk of delegating custody of funds to trusted third parties. \n\n\n **Getting started** \n\n Go to the [Lightning Network DAppNode Package readme](https://github.com/dappnode/DAppNodePackage-LightningNetwork#readme) to learn how to get started and safely backup your data.",
   "avatar": "/ipfs/QmYjbpLBEbPDoiJwTcWjhuHuL1Ax2HuArhXRF4Fi95HT6c",
   "type": "service",
   "image": {
@@ -27,6 +27,9 @@
       "COLOR=#5ACDC5",
       "EXT_IP="
     ]
+  },
+  "dependencies": {
+    "bitcoin.dnp.dappnode.eth": "latest"
   },
   "backup": [
     {
@@ -55,12 +58,12 @@
   ],
   "links": {
     "homepage": "https://github.com/dappnode/DAppNodePackage-LightningNetwork#readme",
-    "WebUI": "http://lightning-network.dappnode",
-    "API": "http://lightning-network.dappnode:8080"
+    "ui": "http://lightning-network.dappnode",
+    "api": "http://lightning-network.dappnode:8080"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dappnode/DAppNodePackage-LightningNetwork.git"
+    "url": "https://github.com/dappnode/DAppNodePackage-LightningNetwork.git"
   },
   "bugs": {
     "url": "https://github.com/dappnode/DAppNodePackage-LightningNetwork/issues"
@@ -68,8 +71,5 @@
   "disclaimer": {
     "message": "This software is experimental, presented 'as is' and inherently carries risks. By installing it, you acknowledge that DAppNode Association has done its best to mitigate these risks and accept to waive any liability or responsibility for DAppNode in case of any shortage, discrepancy, damage, loss or destruction of any digital asset managed within this DAppNode package.\n\nThis package stores private keys, which will be stored in your DAppNode. Neither DAppNode Association nor the developers of this software can have access to your private key, nor help you recover it if you lose it. \n\nYou are solely responsible for keeping your private keys and password safe and to perform secure backups, as well as to restrict access to your computer and other equipment. To the extent permitted by applicable law, you agree to be responsible for all activities that have been conducted from your account. You must take all necessary steps to ensure that your private key, password, and/or recovery phrase remain confidential and secured."
   },
-  "license": "GPL-3.0",
-  "dependencies": {
-    "bitcoin.dnp.dappnode.eth": "latest"
-  }
+  "license": "GPL-3.0"
 }
