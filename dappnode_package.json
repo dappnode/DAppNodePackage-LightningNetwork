@@ -1,8 +1,10 @@
 {
   "name": "lightning-network.dnp.dappnode.eth",
   "version": "0.0.3",
+  "upstreamVersion": "0.6.1-beta",
+  "shortDescription": "Scalable, instant Bitcoin/Blockchain transactions",
   "description": "The Lightning Network DAppNodePackage (lnd + RTL). The Lightning Network is a decentralized system for instant, high-volume micropayments that removes the risk of delegating custody of funds to trusted third parties.",
-  "avatar": "/ipfs/QmVrjV1ANxjYVqRJzycYKcCUAH8nU337UsMVir1CnZYNa8",
+  "avatar": "/ipfs/QmYjbpLBEbPDoiJwTcWjhuHuL1Ax2HuArhXRF4Fi95HT6c",
   "type": "service",
   "image": {
     "path": "",
@@ -32,10 +34,18 @@
       "path": "/root/.lnd/data"
     }
   ],
+  "style": {
+    "featuredBackground": "linear-gradient(67deg, #090909, #2f1354)",
+    "featuredColor": "#eee"
+  },
   "author": "DAppNode Association <admin@dappnode.io> (https://github.com/dappnode)",
   "contributors": [
     "Abel Boldú (@vdo)",
     "Eduardo Antuña <eduadiez@gmail.com> (https://github.com/eduadiez)"
+  ],
+  "categories": [
+    "Payment channels",
+    "Economic incentive"
   ],
   "keywords": [
     "bitcoin",
@@ -44,9 +54,9 @@
     "lnd"
   ],
   "links": {
-    "WebUI": "http://lightning-network.dappnode",
-    "API": "http://lightning-network.dappnode:8080",
-    "readme": "https://github.com/dappnode/DAppNodePackage-LightningNetwork#readme"
+    "homepage": "https://github.com/dappnode/DAppNodePackage-LightningNetwork#readme",
+    "ui": "http://lightning-network.dappnode",
+    "api": "http://lightning-network.dappnode:8080"
   },
   "repository": {
     "type": "git",
