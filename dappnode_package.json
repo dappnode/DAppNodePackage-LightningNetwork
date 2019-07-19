@@ -34,7 +34,7 @@
   "backup": [
     {
       "name": "data",
-      "path": "/root/.lnd/data"
+      "path": "/root/.lnd"
     }
   ],
   "style": {
