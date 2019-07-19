@@ -29,6 +29,7 @@ RUN apk add --no-cache supervisor bash curl nodejs openssl gettext
 
 COPY --from=build /rtl /rtl
 COPY --from=build /bin/lnd /bin/lnd
+COPY --from=build /bin/lncli /bin/lncli
 
 COPY src/scripts/start-lnd.sh /
 COPY src/scripts/start-rtl.sh /rtl
