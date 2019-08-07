@@ -1,4 +1,4 @@
-FROM node:10.15.3-alpine as build
+FROM node:10.16.0-alpine as build
 
 ENV LND_VERSION "v0.7.1-beta"
 ENV RTL_TAG "v0.4.4"
@@ -18,7 +18,7 @@ RUN git clone -b $RTL_TAG https://github.com/ShahanaFarooqui/RTL.git /rtl
 WORKDIR /rtl
 
 RUN npm install
-RUN rm -rf ./node_modules/* &&  npm install --only=production
+RUN rm -rf ./node_modules/* &&  npm install --only=production && npm install @types/node
 
 FROM alpine
 

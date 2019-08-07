@@ -8,8 +8,8 @@
   "type": "service",
   "image": {
     "path": "lightning-network.dnp.dappnode.eth_0.1.1.tar.xz",
-    "hash": "/ipfs/QmcnvMe6yrh2EZuAwyEb372uuzHKMcn145sfKEhkh822b7",
-    "size": 81584921,
+    "hash": "/ipfs/QmXxbfGVFCjJxK3JHr5Cpi6kEWbDdd3gGb8aDPoWJr7Eud",
+    "size": 95610466,
     "ports": [
       "9735:9735"
     ],
