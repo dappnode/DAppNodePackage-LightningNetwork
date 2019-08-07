@@ -24,6 +24,8 @@ FROM alpine
 
 WORKDIR /rtl
 
+ENV CHANNEL_BACKUP_PATH /root/.lnd
+
 # Add requirements
 RUN apk add --no-cache supervisor bash curl nodejs openssl gettext
 
