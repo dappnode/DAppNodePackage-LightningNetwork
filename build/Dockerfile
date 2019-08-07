@@ -1,7 +1,7 @@
 FROM node:10.15.3-alpine as build
 
-ENV LND_VERSION "v0.7.0-beta"
-ENV RTL_TAG "v0.4.2"
+ENV LND_VERSION "v0.7.1-beta"
+ENV RTL_TAG "v0.4.4"
 
 RUN apk add --no-cache wget ca-certificates \
  && wget https://github.com/lightningnetwork/lnd/releases/download/${LND_VERSION}/lnd-linux-amd64-${LND_VERSION}.tar.gz \
@@ -29,6 +29,7 @@ RUN apk add --no-cache supervisor bash curl nodejs openssl gettext
 
 COPY --from=build /rtl /rtl
 COPY --from=build /bin/lnd /bin/lnd
+COPY --from=build /bin/lncli /bin/lncli
 
 COPY src/scripts/start-lnd.sh /
 COPY src/scripts/start-rtl.sh /rtl
