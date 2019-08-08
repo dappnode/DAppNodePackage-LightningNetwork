@@ -18,19 +18,83 @@ For many reasons we don't save any seed to restore the wallet, and having an up 
 # Backup LND data
 
 LND data is stored permanently in a docker volume, but it is recommended to save it apart in case of an update or migration.
-Follow this steps:
+
+When you enter the LN package (under Packages/ My Packages) you will see a Backup tab
+
+<p align="center"><a href="#"><img width="600" title="Backup" src='https://github.com/dappnode/DAppNode/blob/master/doc/backupscreen.jpg?raw=true' /></a></p>
+
+Hit the "Backup now" button and select where do you want to keep your backup file safe. A tar.xz file will be downloaded to the selected path.
+
+# Restore LND data
+
+If anything happens with youur LN node and you have your backup you can always restore it from the ADMIN UI. Just go to Packages / My Packages and select the LN package and the backup tab. Aside the backup button you will see a "Restore" button. 
+
+Just hit the restore button and select your tar.xz backup file and confirm. 
+
+<p align="center"><a href="#"><img width="600" title="Backup" src='https://github.com/dappnode/DAppNode/blob/master/doc/restorescreen.jpg?raw=true' /></a></p>
+
+After the backup file is uploaded your LN node is restored. 
+
+# Using the LN package
+
+**Before downloading the Ligtning Package, we assume previous understanding of the Lightning Network. Otherwise, please have a look at the following documents: 
+
+[lightning-network-summary](https://lightning.network/lightning-network-summary.pdf), [The Bitcoin Lightning Network: Paper (PDF)](https://lightning.network/lightning-network-paper.pdf) and other valuable resources about LN [here](https://lnroute.com/)** 
+
+* This package contains both [Lightning Network Daemon](https://github.com/lightningnetwork/lnd) and [Ride The Lightning](https://github.com/ShahanaFarooqui/RTL) web interface
+
+* You need to have the Bitcoin node package (without pruning) installed and fully synced for the package to work properly. You don't need to wait for the Bitcoin Core node to be fully synced to install the LN package, but it won't be functional until the node is synced.
+
+* The private keys of your LN wallet are stored in your LN node data volume. **Please follow the guide about backups in this document to prevent loss of funds. We don't offer a seed backup mechanism so this is the only way to recover your funds in case something goes wrong**.
+
+* When installing LN in DAppNode there will be two sets of username/password: 
+    * One to connect to the Bitcoin node, RPCUSER and RPCPASS (make sure they are the same as the Bitcoin package) and 
+    * Another one, RTL_PASSWORD, to allow  access to the web UI and execute transactions/use the node. 
+    * Remember to change these if you are sharing your DAppNode with others! Take in account that **if you give admin access to your DAppNode to anyone, that access implies full control of your LN node** including accessing your funds.
+
+* You can connect your favourite LN mobile wallet  by opening a private channel with your node.
+ 
+* When updating this package, volumes will not be affected. You can access an updated version of your LN node witbout risk of losing any funds. Do not remove the volume though, or you will lose the funds on your node if you have not followed the backup instructions. 
+
+## Accessing the ADMIN UI
+
+Once the node is synced, you can access your LN node [admin UI here](https://lightning-network.dappnode)
+
+## How to download macaroons
+
+Usually Lightning Network applications require files called *macaroons* for authorizations to perform operations on the LND node. There are many types depending on the level of access.
+
+To download the admin macaroon, you should go to the Admin panel of DAppnode: 
+
+Packages -> My packages -> Lightning-Network -> File manager
+
+Then input in the "Download from DNP" field:
 
 ```
-docker run --rm --volumes-from DAppNodePackage-lightning-network.dnp.dappnode.eth -v $(pwd):/backup alpine tar cvzf /backup/backup_lnd.tar.gz /root/.lnd
+/config/data/chain/bitcoin/mainnet/admin.macaroon
 ```
-A file named `backup_lnd.tar.gz` will be created in your current path.
 
-To restore it, proceed as follows:
+## How to use Joule extension with DAppNode
+
+Joule is an extension available for many browsers which lets you use your node to make payments, invoices, open channels and more. Check the website: https://lightningjoule.com/
+
+* To run Joule, first you need to download these macaroons in a safe folder, as described above:
+
 ```
-docker run --rm --volumes-from DAppNodePackage-lightning-network.dnp.dappnode.eth -v $(pwd):/backup alpine sh -c "cd /root/.lnd && tar xvzf /backup/backup_lnd.tar.gz --strip 2"
-    
+/config/data/chain/bitcoin/mainnet/admin.macaroon
+/config/data/chain/bitcoin/mainnet/readonly.macaroon
 ```
-then restart the package from the admin interface.
+
+* When asked on the type of node, select Remote and then enter the following url: 
+
+   https://lightning-network.dappnode:8080
+   * You will need to accept the SSL certificate in the next step
+
+* Upload the macaroons, choose a password to encrypt the data, and you're ready to go!
+
+
+* **Enjoy!** But be aware both LND and RTL are beta software .Only use funds you can afford to lose.  Don't be completely #Reckless ;)
+
 
 
 # Prerequisites
@@ -85,69 +149,4 @@ You can edit the `docker-compose.yml` and add extra options, such a:
 ## License
 
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details
-
-
-# Using the LN package
-
-**Before downloading the Ligtning Package, we assume previous understanding of the Lightning Network. Otherwise, please have a look at the following documents: 
-
-[lightning-network-summary](https://lightning.network/lightning-network-summary.pdf), [The Bitcoin Lightning Network: Paper (PDF)](https://lightning.network/lightning-network-paper.pdf) and other valuable resources about LN [here](https://lnroute.com/)** 
-
-* This package contains both [Lightning Network Daemon](https://github.com/lightningnetwork/lnd) and [Ride The Lightning](https://github.com/ShahanaFarooqui/RTL) web interface
-
-* You need to have the Bitcoin node package (without pruning) installed and fully synced for the package to work properly. You don't need to wait for the Bitcoin Core node to be fully synced to install the LN package, but it won't be functional until the node is synced.
-
-* The private keys of your LN wallet are stored in your LN node data volume. **Please follow the guide about backups below in this document to prevent loss of funds. We don't offer a seed backup mechanism so this is the only way to recover your funds in case something goes wrong**.
-
-* When installing LN in DAppNode there will be two sets of username/password: 
-    * One to connect to the Bitcoin node, RPCUSER and RPCPASS (make sure they are the same as the Bitcoin package) and 
-    * Another one, RTL_PASSWORD, to allow  access to the web UI and execute transactions/use the node. 
-    * Remember to change these if you are sharing your DAppNode with others! Take in account that **if you give admin access to your DAppNode to anyone, that access implies full control of your LN node** including accessing your funds.
-
-* You can connect your favourite LN mobile wallet  by opening a private channel with your node.
- 
-* When updating this package, volumes will not be affected. You can access an updated version of your LN node witbout risk of losing any funds. Do not remove the volume though, or you will lose the funds on your node if you have not followed ths instructions for backup.
-
-## Accessing the ADMIN UI
-
-Once the node is synced, you can access your LN node [admin UI here](https://lightning-network.dappnode)
-
-## How to download macaroons
-
-Usually Lightning Network applications require files called *macaroons* for authorizations to perform operations on the LND node. There are many types depending on the level of access.
-
-To download the admin macaroon, you should go to the Admin panel of DAppnode: 
-
-Packages -> lightning-network -> File manager
-
-Then input in the "Download from DNP" field:
-
-```
-/config/data/chain/bitcoin/mainnet/admin.macaroon
-```
-
-## How to use Joule extension with DAppNode
-
-Joule is an extension available for many browsers which lets you use your node to make payments, invoices, open channels and more. Check the website: https://lightningjoule.com/
-
-* To run Joule, first you need to download these macaroons in a safe folder, as described above:
-
-```
-/config/data/chain/bitcoin/mainnet/admin.macaroon
-/config/data/chain/bitcoin/mainnet/readonly.macaroon
-```
-
-* When asked on the type of node, select Remote and then enter the following url: 
-
-   https://lightning-network.dappnode:8080
-   * You will need to accept the SSL certificate in the next step
-
-* Upload the macaroons, choose a password to encrypt the data, and you're ready to go!
-
-
-* **Enjoy!** But be aware both LND and RTL are beta software .Only use funds you can afford to lose.  Don't be completely #Reckless ;)
-
-
-
-
 
