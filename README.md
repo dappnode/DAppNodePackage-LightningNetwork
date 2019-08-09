@@ -27,9 +27,9 @@ Hit the "Backup now" button and select where do you want to keep your backup fil
 
 # Restore LND data
 
-If anything happens with youur LN node and you have your backup you can always restore it from the ADMIN UI. Just go to Packages / My Packages and select the LN package and the backup tab. Aside the backup button you will see a "Restore" button. 
+If anything happens with your LN node and you have your backup you can always restore it from the ADMIN UI. Just go to Packages / My Packages and select the LN package and the backup tab. Aside the backup button you will see a "Restore" button. 
 
-Just hit the restore button and select your tar.xz backup file and confirm. 
+Just hit that sweet restore button, select your tar.xz backup file and confirm. 
 
 <p align="center"><a href="#"><img width="600" title="Backup" src='https://github.com/dappnode/DAppNode/blob/master/doc/restorescreen.jpg?raw=true' /></a></p>
 
