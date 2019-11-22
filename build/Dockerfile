@@ -1,7 +1,7 @@
 FROM node:10.15.3-alpine as build
 
-ENV LND_VERSION "v0.7.1-beta"
-ENV RTL_TAG "v0.4.4"
+ENV LND_VERSION "v0.8.1-beta"
+ENV RTL_TAG "v0.5.4"
 
 RUN apk add --no-cache wget ca-certificates \
  && wget https://github.com/lightningnetwork/lnd/releases/download/${LND_VERSION}/lnd-linux-amd64-${LND_VERSION}.tar.gz \
@@ -13,7 +13,7 @@ RUN apk add --no-cache wget ca-certificates \
 RUN apk add --no-cache \
     bash curl openssl supervisor git make g++
 
-RUN git clone -b $RTL_TAG https://github.com/ShahanaFarooqui/RTL.git /rtl
+RUN git clone -b $RTL_TAG https://github.com/Ride-The-Lightning/RTL.git /rtl
 
 WORKDIR /rtl
 
