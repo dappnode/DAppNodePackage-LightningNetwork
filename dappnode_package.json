@@ -1,27 +1,39 @@
 {
   "name": "lightning-network.dnp.dappnode.eth",
+<<<<<<< HEAD
   "version": "0.1.1",
   "upstreamVersion": "v0.7.1-beta",
+=======
+  "version": "0.1.2",
+  "upstreamVersion": "v0.8.1-beta",
+>>>>>>> Bump versions, split backup
   "shortDescription": "Scalable, instant Bitcoin transactions",
   "description": "The Lightning Network DAppNodePackage (lnd + RTL). The Lightning Network is a decentralized system for instant, high-volume micropayments that remove the risk of delegating custody of funds to trusted third parties. \n\n\n **Getting started** \n\n Go to the [Lightning Network DAppNode Package readme](https://github.com/dappnode/DAppNodePackage-LightningNetwork#readme) to learn how to get started and safely backup your data.",
   "avatar": "/ipfs/QmYjbpLBEbPDoiJwTcWjhuHuL1Ax2HuArhXRF4Fi95HT6c",
   "type": "service",
   "image": {
+<<<<<<< HEAD
     "path": "lightning-network.dnp.dappnode.eth_0.1.1.tar.xz",
     "hash": "/ipfs/QmXxbfGVFCjJxK3JHr5Cpi6kEWbDdd3gGb8aDPoWJr7Eud",
     "size": 95610466,
+=======
+    "path": "lightning-network.dnp.dappnode.eth_0.1.2.tar.xz",
+    "hash": "/ipfs/QmSW5TRfcyQuZTv69UsUJ4jBGb3KkZENq9LrnZxU7jPStL",
+    "size": 99651400,
+>>>>>>> Bump versions, split backup
     "ports": [
       "9735:9735"
     ],
     "volumes": [
-      "lndconfig_data:/root/.lnd/"
+      "lndconfig_data:/root/.lnd/",
+      "lndconfig_backup:/rtl/backup/"
     ],
     "restart": "always",
     "environment": [
       "RTL_PASSWORD=changeme",
       "RPCUSER=dappnode",
       "RPCPASS=dappnode",
-      "BITCOIND_HOST=my.bitcoin.dnp.dappnode.eth",
+      "BITCOIND_HOST=bitcoin.dappnode",
       "NETWORK=mainnet",
       "ALIAS=",
       "COLOR=#5ACDC5",
@@ -33,8 +45,16 @@
   },
   "backup": [
     {
-      "name": "data",
-      "path": "/root/.lnd"
+      "name": "rtl-channel",
+      "path": "/rtl/backup/"
+    },
+    {
+      "name": "lnd-channel",
+      "path": "/root/.lnd/data/chain/bitcoin/mainnet/channel.backup"
+    },
+    {
+      "name": "wallet",
+      "path": "/root/.lnd/data/chain/bitcoin/mainnet/wallet.db"
     }
   ],
   "style": {
