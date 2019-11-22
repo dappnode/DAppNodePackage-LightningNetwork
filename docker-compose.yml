@@ -1,11 +1,7 @@
 version: '3.4'
 services:
   lightning-network.dnp.dappnode.eth:
-<<<<<<< HEAD
-    image: 'lightning-network.dnp.dappnode.eth:0.1.1'
-=======
     image: 'lightning-network.dnp.dappnode.eth:0.1.2'
->>>>>>> Bump versions, split backup
     build: ./build
     volumes:
       - 'lndconfig_data:/root/.lnd/'
