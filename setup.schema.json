@@ -1,0 +1,12 @@
+{
+  "description": "# Want to run Lightning Network on DAppNode?\n\nGreat! That's probably why you are here.\n\nThis wizard will help you to configure your node",
+  "type": "object",
+  "properties": {
+    "rtl_password": {
+      "type": "string",
+      "title": "Password",
+      "description": "Your password for Ride The Lightning Web UI"
+    }
+  },
+  "required": ["rtl_password"]
+}
