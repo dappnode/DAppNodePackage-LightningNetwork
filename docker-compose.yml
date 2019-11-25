@@ -5,16 +5,19 @@ services:
     build: ./build
     volumes:
       - 'lndconfig_data:/root/.lnd/'
+      - 'lndconfig_backup:/rtl/backup/'
     ports:
       - '9735:9735'
     environment:
       - RTL_PASSWORD=changeme
       - RPCUSER=dappnode
       - RPCPASS=dappnode
-      - BITCOIND_HOST=my.bitcoin.dnp.dappnode.eth
+      - BITCOIND_HOST=bitcoin.dappnode
       - NETWORK=mainnet
       - ALIAS=
       - 'COLOR=#5ACDC5'
       - EXT_IP=
+    restart: always
 volumes:
   lndconfig_data: {}
+  lndconfig_backup: {}
