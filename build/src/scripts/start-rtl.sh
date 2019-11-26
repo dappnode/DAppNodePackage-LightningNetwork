@@ -2,7 +2,7 @@
 set -e
 
 # Create restore symlink
-if [ ! -f /rtl/backup/restore ]; then
+if [ ! -L /rtl/backup/restore ]; then
   ln -s /rtl/backup /rtl/backup/restore
 fi
 
