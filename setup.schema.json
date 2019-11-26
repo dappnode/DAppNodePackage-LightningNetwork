@@ -6,6 +6,11 @@
       "type": "string",
       "title": "Password",
       "description": "Your password for Ride The Lightning Web UI"
+    },
+    "alias": {
+      "type": "string",
+      "title": "Alias",
+      "description": "Alias name for your node (will be public)"
     }
   },
   "required": ["rtl_password"]
