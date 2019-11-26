@@ -2,8 +2,5 @@
   "ui:order": ["rtl_password","alias"],
   "rtl_password": {
     "ui:widget": "password"
-  },
-  "alias": {
-    "ui:widget": "alias"
   }
 }
