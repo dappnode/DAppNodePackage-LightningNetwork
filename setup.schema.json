@@ -1,17 +1,31 @@
 {
-  "description": "# Want to run Lightning Network on DAppNode?\n\nGreat! That's probably why you are here.\n\nThis wizard will help you to configure your node",
+  "description": "Welcome to DAppNode's Lightning Network configuration wizard!\n",
   "type": "object",
   "properties": {
-    "rtl_password": {
+    "color": {
       "type": "string",
-      "title": "Password",
-      "description": "Your password for Ride The Lightning Web UI"
+      "title": "Color",
+      "description": "The color of the node in hex format, used to customize node appearance in intelligence services.",
+      "pattern": "^#[a-fA-F0-9]{6}$",
+      "customErrors": {
+        "pattern": "Must be a valid Must be a valid hex color (#012CAF)"
+      }
+    },
+    "rtlPassword": {
+      "type": "string",
+      "title": "RTL Password",
+      "description": "Password to access RTL operator interface."
     },
     "alias": {
       "type": "string",
       "title": "Alias",
-      "description": "Alias name for your node (will be public)"
+      "description": "Alias of the node."
+    },
+    "channel-backup": {
+      "type": "string",
+      "format": "data-url",
+      "title": "Channels backup (RTL)",
+      "description": "The Ride The Lightning backup file to restore (OPTIONAL)"
     }
-  },
-  "required": ["rtl_password"]
+  }
 }

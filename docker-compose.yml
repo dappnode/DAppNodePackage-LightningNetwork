@@ -9,7 +9,7 @@ services:
     ports:
       - '9735:9735'
     environment:
-      - RTL_PASSWORD=changeme
+      - RTL_PASSWORD=
       - RPCUSER=dappnode
       - RPCPASS=dappnode
       - BITCOIND_HOST=bitcoin.dappnode

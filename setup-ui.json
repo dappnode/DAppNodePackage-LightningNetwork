@@ -1,6 +1,12 @@
 {
-  "ui:order": ["rtl_password","alias"],
-  "rtl_password": {
+  "required": ["rtlPassword"],
+  "ui:order": ["rtlPassword", "alias", "color", "channel-backup"],
+  "rtlPassword": {
     "ui:widget": "password"
+  },
+  "color": {
+    "errorMessages": {
+      "pattern": "Must be a valid hex color (#012CAF)"
+    }
   }
 }

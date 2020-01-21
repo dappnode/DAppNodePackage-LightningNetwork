@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
-# Create restore symlink
-if [ ! -L /rtl/backup/restore ]; then
-  ln -s /rtl/backup /rtl/backup/restore
-fi
+# Create restore dir
+[ -d /rtl/backup/restore ] || mkdir -p /rtl/backup/restore
 
 # Configure settings from env vars
-envsubst < "source_RTL.conf" > "RTL.conf"
+envsubst <"source_RTL.conf" >"RTL.conf"
 
 node rtl

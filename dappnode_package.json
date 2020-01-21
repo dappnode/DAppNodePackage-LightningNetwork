@@ -10,15 +10,15 @@
   },
   "backup": [
     {
-      "name": "rtl-channel",
+      "name": "rtl-backup",
       "path": "/rtl/backup/"
     },
     {
-      "name": "lnd-channel",
+      "name": "channel.backup",
       "path": "/root/.lnd/data/chain/bitcoin/mainnet/channel.backup"
     },
     {
-      "name": "wallet",
+      "name": "wallet.db",
       "path": "/root/.lnd/data/chain/bitcoin/mainnet/wallet.db"
     }
   ],
@@ -31,16 +31,8 @@
     "Abel Boldú (@vdo)",
     "Eduardo Antuña <eduadiez@gmail.com> (https://github.com/eduadiez)"
   ],
-  "categories": [
-    "Payment channels",
-    "Economic incentive"
-  ],
-  "keywords": [
-    "bitcoin",
-    "btc",
-    "lightning network",
-    "lnd"
-  ],
+  "categories": ["Payment channels", "Economic incentive"],
+  "keywords": ["bitcoin", "btc", "lightning network", "lnd"],
   "links": {
     "homepage": "https://github.com/dappnode/DAppNodePackage-LightningNetwork#readme",
     "ui": "http://lightning-network.dappnode",

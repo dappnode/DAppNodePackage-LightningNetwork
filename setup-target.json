@@ -1,10 +1,18 @@
 {
-  "rtl_password": {
-    "type": "environment",
-    "name": "RTL_PASSWORD"
+  "channel-backup": {
+    "type": "fileUpload",
+    "path": "/rtl/backup/restore/channel-all.bak"
   },
   "alias": {
     "type": "environment",
     "name": "ALIAS"
+  },
+  "rtlPassword": {
+    "type": "environment",
+    "name": "RTL_PASSWORD"
+  },
+  "color": {
+    "type": "environment",
+    "name": "COLOR"
   }
 }
