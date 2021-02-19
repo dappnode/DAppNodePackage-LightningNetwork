@@ -14,8 +14,8 @@ fields:
       type: environment
       name: UI_PASSWORD
       service: rtl
-      pattern: '^.{8,}$'
-      patternErrorMessage: 'Minimum eight characters, at least one letter and one number'
+    pattern: '^.{8,}$'
+    patternErrorMessage: 'Minimum eight characters, at least one letter and one number'
     description: Add a new password for the UI
 
   - title: Mainnet or testnet
