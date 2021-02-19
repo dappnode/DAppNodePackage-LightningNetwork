@@ -1,0 +1,30 @@
+version: '2'
+fields:
+  - title: Alias
+    id: bitcoin-alias
+    target:
+      type: environment
+      name: ALIAS
+      service: lnd
+    description: Add the bitcoin alias
+
+  - title: Password
+    id: ui-password
+    target:
+      type: environment
+      name: UI_PASSWORD
+      service: rtl
+      pattern: '^.{8,}$'
+      patternErrorMessage: 'Minimum eight characters, at least one letter and one number'
+    description: Add a new password for the UI
+
+  - title: Mainnet or testnet
+    id: mainnet-testnet
+    target:
+      type: environment
+      name: MAINNET
+      service: lnd
+    enum:
+      - true
+      - false
+    description: Select Mainnet (true) or testnet (false)

@@ -1,60 +1,77 @@
 {
-  "name": "lightning-network.dnp.dappnode.eth",
-  "version": "0.1.2",
-  "upstreamVersion": "v0.8.1-beta",
-  "shortDescription": "Scalable, instant Bitcoin transactions",
-  "description": "The Lightning Network DAppNodePackage (lnd + RTL). The Lightning Network is a decentralized system for instant, high-volume micropayments that remove the risk of delegating custody of funds to trusted third parties. \n\n\n **Getting started** \n\n Go to the [Lightning Network DAppNode Package readme](https://github.com/dappnode/DAppNodePackage-LightningNetwork#readme) to learn how to get started and safely backup your data.",
-  "type": "service",
-  "dependencies": {
-    "bitcoin.dnp.dappnode.eth": "latest"
-  },
-  "backup": [
-    {
-      "name": "rtl-channel",
-      "path": "/rtl/backup/"
-    },
-    {
-      "name": "lnd-channel",
-      "path": "/root/.lnd/data/chain/bitcoin/mainnet/channel.backup"
-    },
-    {
-      "name": "wallet",
-      "path": "/root/.lnd/data/chain/bitcoin/mainnet/wallet.db"
-    }
-  ],
-  "style": {
-    "featuredBackground": "linear-gradient(67deg, #090909, #2f1354)",
-    "featuredColor": "#eee"
-  },
-  "author": "DAppNode Association <admin@dappnode.io> (https://github.com/dappnode)",
-  "contributors": [
-    "Abel Boldú (@vdo)",
-    "Eduardo Antuña <eduadiez@gmail.com> (https://github.com/eduadiez)"
-  ],
-  "categories": [
-    "Payment channels",
-    "Economic incentive"
-  ],
-  "keywords": [
-    "bitcoin",
-    "btc",
-    "lightning network",
-    "lnd"
-  ],
-  "links": {
-    "homepage": "https://github.com/dappnode/DAppNodePackage-LightningNetwork#readme",
-    "ui": "http://lightning-network.dappnode",
-    "api": "http://lightning-network.dappnode:8080"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/dappnode/DAppNodePackage-LightningNetwork.git"
-  },
-  "bugs": {
-    "url": "https://github.com/dappnode/DAppNodePackage-LightningNetwork/issues"
-  },
-  "disclaimer": {
-    "message": "This software is experimental, presented 'as is' and inherently carries risks. By installing it, you acknowledge that DAppNode Association has done its best to mitigate these risks and accept to waive any liability or responsibility for DAppNode in case of any shortage, discrepancy, damage, loss or destruction of any digital asset managed within this DAppNode package.\n\nThis package stores private keys, which will be stored in your DAppNode. Neither DAppNode Association nor the developers of this software can have access to your private key, nor help you recover it if you lose it. \n\nYou are solely responsible for keeping your private keys and password safe and to perform secure backups, as well as to restrict access to your computer and other equipment. To the extent permitted by applicable law, you agree to be responsible for all activities that have been conducted from your account. You must take all necessary steps to ensure that your private key, password, and/or recovery phrase remain confidential and secured."
-  },
-  "license": "GPL-3.0"
+	"name": "lightning-network.dnp.dappnode.eth",
+	"version": "0.1.3",
+	"upstreamArg": "UPSTREAM_VERSION",
+	"upstreamVersion": "v0.12.0-beta",
+	"shortDescription": "Scalable, instant Bitcoin transactions",
+	"description": "The Lightning Network DAppNodePackage (lnd + RTL). The Lightning Network is a decentralized system for instant, high-volume micropayments that remove the risk of delegating custody of funds to trusted third parties. \n\n\n **Getting started** \n\n Go to the [Lightning Network DAppNode Package readme](https://github.com/dappnode/DAppNodePackage-LightningNetwork#readme) to learn how to get started and safely backup your data.",
+	"type": "service",
+	"dependencies": {
+		"bitcoin.dnp.dappnode.eth": "latest"
+	},
+	"backup": [
+		{
+			"name": "rtl-channel",
+			"path": "/shared/lnd/backup/channel-all.bak ",
+			"service": "rtl"
+		},
+		{
+			"name": "tls-cert",
+			"path": "/shared/tls.cert",
+			"service": "rtl"
+		},
+		{
+			"name": "rtl-config",
+			"path": "/RTL/RTL-Config.json",
+			"service": "rtl"
+		},
+		{
+			"name": "lnd-channel",
+			"path": "/shared/channel.backup",
+			"service": "lnd"
+		},
+		{
+			"name": "lnd-config",
+			"path": "/root/.lnd/lnd.conf",
+			"service": "lnd"
+		},
+		{
+			"name": "admin-macaroon",
+			"path": "/shared/admin.macaroon",
+			"service": "lnd"
+		},
+		{
+			"name": "wallet",
+			"path": "/root/.lnd/data/chain/bitcoin/mainnet/wallet.db",
+			"service": "lnd"
+		}
+	],
+	"style": {
+		"featuredBackground": "linear-gradient(67deg, #090909, #2f1354)",
+		"featuredColor": "#eee"
+	},
+	"author": "DAppNode Association <admin@dappnode.io> (https://github.com/dappnode)",
+	"contributors": [
+		"Abel Boldú (@vdo)",
+		"Eduardo Antuña <eduadiez@gmail.com> (https://github.com/eduadiez)",
+		"Pablo Mendez (mendez4a@gmail.com)"
+	],
+	"categories": ["Payment channels", "Economic incentive"],
+	"keywords": ["bitcoin", "btc", "lightning network", "lnd"],
+	"links": {
+		"homepage": "https://github.com/dappnode/DAppNodePackage-LightningNetwork#readme",
+		"ui": "http://rtl.lightning-network.dappnode",
+		"api": "http://lnd.lightning-network.public.dappnode:8080/"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/dappnode/DAppNodePackage-LightningNetwork.git"
+	},
+	"bugs": {
+		"url": "https://github.com/dappnode/DAppNodePackage-LightningNetwork/issues"
+	},
+	"disclaimer": {
+		"message": "This software is experimental, presented 'as is' and inherently carries risks. By installing it, you acknowledge that DAppNode Association has done its best to mitigate these risks and accept to waive any liability or responsibility for DAppNode in case of any shortage, discrepancy, damage, loss or destruction of any digital asset managed within this DAppNode package.\n\nThis package stores private keys, which will be stored in your DAppNode. Neither DAppNode Association nor the developers of this software can have access to your private key, nor help you recover it if you lose it. \n\nYou are solely responsible for keeping your private keys and password safe and to perform secure backups, as well as to restrict access to your computer and other equipment. To the extent permitted by applicable law, you agree to be responsible for all activities that have been conducted from your account. You must take all necessary steps to ensure that your private key, password, and/or recovery phrase remain confidential and secured."
+	},
+	"license": "GPL-3.0"
 }
