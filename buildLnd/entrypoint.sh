@@ -6,11 +6,12 @@ set -e
 if [ -z ${ALIAS} ] 
 then
   echo "setting default alias: dappnode"
-  UI_PASSWORD="dappnode"
+  ALIAS="dappnode"
 else
   echo "setting alias"
 fi
 
+# Set default testnet if does not exists
 if [ -z ${MAINNET} ] 
 then
   echo "setting default mainnet: false"
