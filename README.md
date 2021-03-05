@@ -1,152 +1,49 @@
-# Lightning Network DAppNode Package
+<!-- :female_detective: Looking for a new champion -->
 
-[![DAppNodeStore Available](https://img.shields.io/badge/DAppNodeStore-Available-brightgreen.svg)](http://my.admin.dnp.dappnode.eth/#/installer/ln.dnp.dappnode.eth)
+# DAppNode package _Lightning Network_
 
-This package makes it easy to deploy a [Lightning Network Daemon](https://github.com/lightningnetwork/lnd) in a DAppNode. It also includes a web interface [Ride The Lightning](https://github.com/ShahanaFarooqui/RTL/) to manage the node.
+<!--DAppNode package logo (could be added with an hyperlink to a youtube video): -->
 
-[Summary](https://lightning.network/lightning-network-summary.pdf)
+[![](avatar-lightning-network.png)](https://www.youtube.com/watch?v=pBh4DcM-0pg)
 
-[The Bitcoin Lightning Network: Paper (PDF)](https://lightning.network/lightning-network-paper.pdf)
+<!--Brief introduction about the source project (official project definition is an option): -->
 
-# Warning :warning:
+The lightning network is a second layer technology applied to bitcoin that uses micropayment channels to scale its blockchain’s capability to conduct transactions more efficiently. Transactions conducted on lightning networks are faster, less costly, and more readily confirmed than those conducted directly on the bitcoin blockchain
+
+### Why _Lightning network_
+
+Lightning network was invented for speed and lower costs:
+
+- Significant increase in transactions per second Micro payments can be carried out with better efficiency with the lightning network and it will be instantaneous.
+- Support for altcoins making it horizontally scalable
+- The initial transaction fees in this network are cheaper compared to that of the original bitcoin network Lightning network has the same security as Bitcoin’s main chain while keeping transactions in the layer two till the time they are settled on the main chain.
+
+**Furthermore, the DAppNode package for Lightning Network allows you to access a UI provided by RTL (ride the lightning), where you can easily access your wallet and execute transacitons over Bitcoin network.**
+
+### Requirements
+
+Rquirements to run DAppNode package for Lightning Network
+
+<!--Requirements to run the dappnode package in a list: -->
+
+- **Bitcoin node**: it is mandatory to run a bitcoin node. Get your own bitoin node and install it in your DAppNode. [Available in the DAppStore](http://my.dappnode/#/installer/bitcoin.dnp.dappnode.eth).
+
+### Manteinance
+
+<!--Table with champion/s mantainers, versions and update status -->
+<!--UPDATED: :x: OR :heavy_check_mark: -->
+
+|      Updated       |   Champion/s   |
+| :----------------: | :------------: |
+| :heavy_check_mark: | @pablomendez95 |
+
+### Warning :warning:
 
 Both LND and RTL are beta software. Don't be completely #reckless.
 
 It is recommended to save backups every time you update the package, or even from time to time with a cron job.
 For many reasons we don't save any seed to restore the wallet, and having an up to date backup is crucial to not lose any funds in case something bad happens.
 
-# Backup LND data
-
-LND data is stored permanently in a docker volume, but it is recommended to save it apart in case of an update or migration.
-
-When you enter the LN package (under Packages/ My Packages) you will see a Backup tab
-
-<p align="center"><a href="#"><img width="600" title="Backup" src='https://github.com/dappnode/DAppNode/blob/master/doc/backupscreen.jpg?raw=true' /></a></p>
-
-Hit the "Backup now" button and select where do you want to keep your backup file safe. A tar.xz file will be downloaded to the selected path.
-
-# Restore LND data
-
-If anything happens with your LN node and you have your backup you can always restore it from the ADMIN UI. Just go to Packages / My Packages and select the LN package and the backup tab. Aside the backup button you will see a "Restore" button. 
-
-Just hit that sweet restore button, select your tar.xz backup file and confirm. 
-
-<p align="center"><a href="#"><img width="600" title="Backup" src='https://github.com/dappnode/DAppNode/blob/master/doc/restorescreen.jpg?raw=true' /></a></p>
-
-After the backup file is uploaded your LN node is restored. 
-
-# Using the LN package
-
-**Before downloading the Ligtning Package, we assume previous understanding of the Lightning Network. Otherwise, please have a look at the following documents: 
-
-[lightning-network-summary](https://lightning.network/lightning-network-summary.pdf), [The Bitcoin Lightning Network: Paper (PDF)](https://lightning.network/lightning-network-paper.pdf) and other valuable resources about LN [here](https://lnroute.com/)** 
-
-* This package contains both [Lightning Network Daemon](https://github.com/lightningnetwork/lnd) and [Ride The Lightning](https://github.com/ShahanaFarooqui/RTL) web interface
-
-* You need to have the Bitcoin node package (without pruning) installed and fully synced for the package to work properly. You don't need to wait for the Bitcoin Core node to be fully synced to install the LN package, but it won't be functional until the node is synced.
-
-* The private keys of your LN wallet are stored in your LN node data volume. **Please follow the guide about backups in this document to prevent loss of funds. We don't offer a seed backup mechanism so this is the only way to recover your funds in case something goes wrong**.
-
-* When installing LN in DAppNode there will be two sets of username/password: 
-    * One to connect to the Bitcoin node, RPCUSER and RPCPASS (make sure they are the same as the Bitcoin package) and 
-    * Another one, RTL_PASSWORD, to allow  access to the web UI and execute transactions/use the node. 
-    * Remember to change these if you are sharing your DAppNode with others! Take in account that **if you give admin access to your DAppNode to anyone, that access implies full control of your LN node** including accessing your funds.
-
-* You can connect your favourite LN mobile wallet  by opening a private channel with your node.
- 
-* When updating this package, volumes will not be affected. You can access an updated version of your LN node witbout risk of losing any funds. Do not remove the volume though, or you will lose the funds on your node if you have not followed the backup instructions. 
-
-## Accessing the ADMIN UI
-
-Once the node is synced, you can access your LN node [admin UI here](https://lightning-network.dappnode)
-
-## How to download macaroons
-
-Usually Lightning Network applications require files called *macaroons* for authorizations to perform operations on the LND node. There are many types depending on the level of access.
-
-To download the admin macaroon, you should go to the Admin panel of DAppnode: 
-
-Packages -> My packages -> Lightning-Network -> File manager
-
-Then input in the "Download from DNP" field:
-
-```
-/config/data/chain/bitcoin/mainnet/admin.macaroon
-```
-
-## How to use Joule extension with DAppNode
-
-Joule is an extension available for many browsers which lets you use your node to make payments, invoices, open channels and more. Check the website: https://lightningjoule.com/
-
-* To run Joule, first you need to download these macaroons in a safe folder, as described above:
-
-```
-/config/data/chain/bitcoin/mainnet/admin.macaroon
-/config/data/chain/bitcoin/mainnet/readonly.macaroon
-```
-
-* When asked on the type of node, select Remote and then enter the following url: 
-
-   https://lightning-network.dappnode:8080
-   * You will need to accept the SSL certificate in the next step
-
-* Upload the macaroons, choose a password to encrypt the data, and you're ready to go!
-
-
-* **Enjoy!** But be aware both LND and RTL are beta software .Only use funds you can afford to lose.  Don't be completely #Reckless ;)
-
-
-
-# Prerequisites
-
-- git
-
-   Install [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) commandline tool.
-
-- docker
-
-   Install [docker](https://docs.docker.com/engine/installation). The community edition (docker-ce) will work. In Linux make sure you grant permissions to the current user to use docker by adding current user to docker group, `sudo usermod -aG docker $USER`. Once you update the users group, exit from the current terminal and open a new one to make effect.
-
-- docker-compose
-
-   Install [docker-compose](https://docs.docker.com/compose/install)
-   
-**Note**: Make sure you can run `git`, `docker ps`, `docker-compose` without any issue and without sudo command.
-
-
-## Building
-
-`docker-compose build`
-
-## Running
-
-### Start
-
-`docker-compose up -d`
-
-### View logs
-
-`docker-compose logs -f`
-
-### Stop
-
-`docker-compose down`
-
-## Environment variables
-
-You can edit the `docker-compose.yml` and add extra options, such a:
-
-| name | default |
-| ---- | ------- |
-| RPCUSER | dappnode |
-| RPCPASS | dappnode |
-| BITCOIND_HOST | my.bitcoin.dnp.dappnode.eth |
-| NETWORK | mainnet |
-| ALIAS |  |
-| COLOR |  |
-| EXT_IP |  |
-
-## License
+### License
 
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details
-
