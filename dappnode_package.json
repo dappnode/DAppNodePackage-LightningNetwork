@@ -1,7 +1,7 @@
 {
   "name": "lightning-network.dnp.dappnode.eth",
   "version": "0.3.0",
-  "upstreamVersion": "v0.11.2-beta",
+  "upstreamVersion": "v0.14.1-beta",
   "shortDescription": "Scalable, instant Bitcoin transactions",
   "description": "The Lightning Network DAppNodePackage (lnd + RTL). The Lightning Network is a decentralized system for instant, high-volume micropayments that remove the risk of delegating custody of funds to trusted third parties. \n\n\n **Getting started** \n\n Go to the [Lightning Network DAppNode Package readme](https://github.com/dappnode/DAppNodePackage-LightningNetwork#readme) to learn how to get started and safely backup your data.",
   "type": "service",
