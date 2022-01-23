@@ -9,4 +9,4 @@ fi
 # Configure settings from env vars
 envsubst < "source_RTL.conf" > "RTL.conf"
 
-node rtl
+exec node rtl
