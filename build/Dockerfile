@@ -35,7 +35,7 @@ COPY --from=build /bin/lncli /bin/lncli
 
 COPY src/scripts/start-lnd.sh /
 COPY src/scripts/start-rtl.sh /rtl
-COPY src/config/source_RTL.conf /rtl
+COPY src/config/source_RTL-Config.json /rtl
 
 RUN ln -s /root/.lnd /config
 
