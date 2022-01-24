@@ -17,8 +17,8 @@
       },
       "Settings": {
         "userPersona": "MERCHANT",
-        "themeMode": "DAY",
-        "themeColor": "COLOR",
+        "themeMode": "NIGHT",
+        "themeColor": "TEAL",
         "channelBackupPath": "/root/backup/node-1",
         "logLevel": "ERROR",
         "lnServerUrl": "https://localhost:8080",
