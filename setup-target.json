@@ -1,7 +1,7 @@
 {
   "rtl_password": {
     "type": "environment",
-    "name": "RTL_PASSWORD"
+    "name": "APP_PASSWORD"
   },
   "alias": {
     "type": "environment",

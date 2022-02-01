@@ -7,6 +7,8 @@ if [ ! -L /rtl/backup/restore ]; then
 fi
 
 # Configure settings from env vars
+envsubst < "source_RTL-Config.json" > "RTL-Config.json"
+
 envsubst < "source_RTL.conf" > "RTL.conf"
 
-node rtl
+exec node rtl
