@@ -33,14 +33,14 @@ COPY --from=build /rtl /rtl
 COPY --from=build /bin/lnd /bin/lnd
 COPY --from=build /bin/lncli /bin/lncli
 
-COPY src/scripts/start-lnd.sh /
-COPY src/scripts/start-rtl.sh /rtl
-COPY src/config/source_RTL.conf /rtl
+COPY scripts/start-lnd.sh /
+COPY scripts/start-rtl.sh /rtl
+COPY config/source_RTL.conf /rtl
 
 RUN ln -s /root/.lnd /config
 
 RUN mkdir -p /var/log/supervisor
-COPY src/config/supervisord.conf /
+COPY config/supervisord.conf /
 
 # Expose lnd ports (server, rpc).
 EXPOSE 9735 10009 80
