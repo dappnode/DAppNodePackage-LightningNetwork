@@ -1,152 +1,65 @@
-# Lightning Network DAppNode Package
+# Lightning Network Dappnode package
 
-[![DAppNodeStore Available](https://img.shields.io/badge/DAppNodeStore-Available-brightgreen.svg)](http://my.admin.dnp.dappnode.eth/#/installer/ln.dnp.dappnode.eth)
+Run LND and the Ride The Lightning web interface as two services. This update adopts the separate-service and official-image approach proposed in [PR #24](https://github.com/dappnode/DAppNodePackage-LightningNetwork/pull/24), with current security versions and verified RTL-to-LND TLS.
 
-This package makes it easy to deploy a [Lightning Network Daemon](https://github.com/lightningnetwork/lnd) in a DAppNode. It also includes a web interface [Ride The Lightning](https://github.com/ShahanaFarooqui/RTL/) to manage the node.
+| Service | Upstream | Package changes |
+| --- | --- | --- |
+| `lnd` | Official `lightninglabs/lnd:v0.21.4-beta`, pinned by digest | Startup configuration, migration guard and refreshed system CA trust. |
+| `rtl` | Official `shahanafarooqui/rtl:v0.15.15`, pinned by digest; Node 22.23.4 | Retain the official frontend/dependencies, apply our verified-TLS backend patch and refresh system CA trust. |
 
-[Summary](https://lightning.network/lightning-network-summary.pdf)
+The provisional package version is **0.5.0** because the service layout and operator configuration change. Only amd64 is currently validated.
 
-[The Bitcoin Lightning Network: Paper (PDF)](https://lightning.network/lightning-network-paper.pdf)
+## Installation and UI
 
-# Warning :warning:
+Install a compatible, synchronized Bitcoin package. Choose an RTL password in the Dappnode installation form, then open `http://rtl.lightning-network.dappnode` and sign in with that password. The password is provided only to RTL. LND generates the wallet's credentials and TLS certificates itself; wallet creation/unlock works through RTL.
 
-Both LND and RTL are beta software. Don't be completely #reckless.
+**Existing installations must follow [MIGRATION.md](MIGRATION.md)** before updating. A direct LND 0.14.1 → 0.21.4 database upgrade failed in our isolated test. The tested intermediate release is LND 0.15.5.
 
-It is recommended to save backups every time you update the package, or even from time to time with a cron job.
-For many reasons we don't save any seed to restore the wallet, and having an up to date backup is crucial to not lose any funds in case something bad happens.
+## Service and data boundaries
 
-# Backup LND data
+- `lndconfig_data` stays mounted at `/root/.lnd` in LND. The wallet database and TLS private key are never mounted into RTL.
+- `lnd_shared` contains the public TLS certificate(s) and admin macaroon. LND writes it; RTL mounts it read-only at `/shared`.
+- `lndconfig_backup` remains the dedicated RTL backup volume, now mounted at `/RTL/backup`.
+- Only LND's peer port `9735` is published on the host. RTL and LND REST use Dappnode's internal service network; gRPC retains LND's default local listener.
 
-LND data is stored permanently in a docker volume, but it is recommended to save it apart in case of an update or migration.
+RTL remains an administrator of LND through its admin macaroon; separating private-key storage does not restrict the wallet operations that this credential authorizes. Package backups contain sensitive wallet/credential material and must be protected.
 
-When you enter the LN package (under Packages/ My Packages) you will see a Backup tab
+## Verified TLS
 
-<p align="center"><a href="#"><img width="600" title="Backup" src='https://github.com/dappnode/DAppNode/blob/master/doc/backupscreen.jpg?raw=true' /></a></p>
+RTL uses `https://lnd.lightning-network.dappnode:8080`. LND includes that hostname in its certificate. The RTL patch trusts `/shared/tls.cert` and, while encrypted-key LND is locked, `/shared/tls.cert.tmp`. It retains hostname and expiry verification, binds requests to the configured HTTPS origin, and follows no credentialed redirects.
 
-Hit the "Backup now" button and select where do you want to keep your backup file safe. A tar.xz file will be downloaded to the selected path.
+Each new connection reads the current local public certificate files. Missing, malformed, untrusted, expired or wrong-hostname certificates fail safely while the UI remains available. Certificate renewal and temporary-to-permanent unlock transitions need no RTL restart. No private-key loading, network trust discovery, insecure retry or automatic payment replay is used.
 
-# Restore LND data
+The TLS settings and credentialed origin are server-owned. The browser settings API cannot replace them. LND's raw configuration file, which can contain Bitcoin RPC credentials, is not mounted into RTL. The separate upstream CLN WebSocket transport is outside this LND package's scope.
 
-If anything happens with your LN node and you have your backup you can always restore it from the ADMIN UI. Just go to Packages / My Packages and select the LN package and the backup tab. Aside the backup button you will see a "Restore" button. 
+## Configuration
 
-Just hit that sweet restore button, select your tar.xz backup file and confirm. 
+| Service | Variables |
+| --- | --- |
+| `rtl` | `APP_PASSWORD` — required, non-default UI password. |
+| `lnd` | `NETWORK` (`mainnet` by default), `RPCUSER`, `RPCPASS`, `BITCOIND_HOST`, optional `BITCOIND_RPCPORT`, `BITCOIND_RPC_POLLING`, `ALIAS`, `COLOR`, `EXT_IP`. |
+| `lnd` | `LND_MIGRATION_CONFIRMED` — only set after the documented staged migration of an existing unmarked wallet. |
 
-<p align="center"><a href="#"><img width="600" title="Backup" src='https://github.com/dappnode/DAppNode/blob/master/doc/restorescreen.jpg?raw=true' /></a></p>
+TLS certificate/macaroons paths and service hostname are set by LND's wrapper arguments. RTL's matching trust/origin configuration is installed by its wrapper. Existing LND configuration files are retained; the wrapper does not rewrite the operator's Bitcoin credentials into a shared file.
 
-After the backup file is uploaded your LN node is restored. 
+## Build and validation
 
-# Using the LN package
-
-**Before downloading the Ligtning Package, we assume previous understanding of the Lightning Network. Otherwise, please have a look at the following documents: 
-
-[lightning-network-summary](https://lightning.network/lightning-network-summary.pdf), [The Bitcoin Lightning Network: Paper (PDF)](https://lightning.network/lightning-network-paper.pdf) and other valuable resources about LN [here](https://lnroute.com/)** 
-
-* This package contains both [Lightning Network Daemon](https://github.com/lightningnetwork/lnd) and [Ride The Lightning](https://github.com/ShahanaFarooqui/RTL) web interface
-
-* You need to have the Bitcoin node package (without pruning) installed and fully synced for the package to work properly. You don't need to wait for the Bitcoin Core node to be fully synced to install the LN package, but it won't be functional until the node is synced.
-
-* The private keys of your LN wallet are stored in your LN node data volume. **Please follow the guide about backups in this document to prevent loss of funds. We don't offer a seed backup mechanism so this is the only way to recover your funds in case something goes wrong**.
-
-* When installing LN in DAppNode there will be two sets of username/password: 
-    * One to connect to the Bitcoin node, RPCUSER and RPCPASS (make sure they are the same as the Bitcoin package) and 
-    * Another one, RTL_PASSWORD, to allow  access to the web UI and execute transactions/use the node. 
-    * Remember to change these if you are sharing your DAppNode with others! Take in account that **if you give admin access to your DAppNode to anyone, that access implies full control of your LN node** including accessing your funds.
-
-* You can connect your favourite LN mobile wallet  by opening a private channel with your node.
- 
-* When updating this package, volumes will not be affected. You can access an updated version of your LN node witbout risk of losing any funds. Do not remove the volume though, or you will lose the funds on your node if you have not followed the backup instructions. 
-
-## Accessing the ADMIN UI
-
-Once the node is synced, you can access your LN node [admin UI here](https://lightning-network.dappnode)
-
-## How to download macaroons
-
-Usually Lightning Network applications require files called *macaroons* for authorizations to perform operations on the LND node. There are many types depending on the level of access.
-
-To download the admin macaroon, you should go to the Admin panel of DAppnode: 
-
-Packages -> My packages -> Lightning-Network -> File manager
-
-Then input in the "Download from DNP" field:
-
-```
-/config/data/chain/bitcoin/mainnet/admin.macaroon
+```sh
+docker compose build
 ```
 
-## How to use Joule extension with DAppNode
+For local validation, the harness defaults use these image aliases:
 
-Joule is an extension available for many browsers which lets you use your node to make payments, invoices, open channels and more. Check the website: https://lightningjoule.com/
-
-* To run Joule, first you need to download these macaroons in a safe folder, as described above:
-
+```sh
+docker build -t codex/lightning-lnd:split-20261023 buildLnd
+docker build -t codex/lightning-rtl:split-20261023 buildRtl
+python3 tests/runtime-smoke.py --output /tmp/lightning-runtime-private
+python3 tests/regtest-smoke.py --fresh --output /tmp/lightning-fresh-private
+python3 tests/regtest-smoke.py --fresh --encrypted-tls --output /tmp/lightning-encrypted-private
 ```
-/config/data/chain/bitcoin/mainnet/admin.macaroon
-/config/data/chain/bitcoin/mainnet/readonly.macaroon
-```
 
-* When asked on the type of node, select Remote and then enter the following url: 
+Build the pinned Bitcoin/legacy LND test fixtures and run the staged regression using the commands in `.github/workflows/node-runtime-test.yml`. All tests use synthetic credentials, unfunded wallets, disposable volumes and an internal Docker network. Do not distribute raw wallet logs; share the JSON summaries only.
 
-   https://lightning-network.dappnode:8080
-   * You will need to accept the SSL certificate in the next step
+The RTL image build checks the pinned source commit, applies `buildRtl/patches/rtl-lnd-tls-verification.patch`, compiles the patched backend and runs all 397 backend tests as an unprivileged user. The official frontend is retained. The runtime harness covers UI/password/CSRF, WebSocket upgrade, wrong/untrusted certificates, read-only sharing, renewal, backup preservation and independent service restarts.
 
-* Upload the macaroons, choose a password to encrypt the data, and you're ready to go!
-
-
-* **Enjoy!** But be aware both LND and RTL are beta software .Only use funds you can afford to lose.  Don't be completely #Reckless ;)
-
-
-
-# Prerequisites
-
-- git
-
-   Install [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) commandline tool.
-
-- docker
-
-   Install [docker](https://docs.docker.com/engine/installation). The community edition (docker-ce) will work. In Linux make sure you grant permissions to the current user to use docker by adding current user to docker group, `sudo usermod -aG docker $USER`. Once you update the users group, exit from the current terminal and open a new one to make effect.
-
-- docker-compose
-
-   Install [docker-compose](https://docs.docker.com/compose/install)
-   
-**Note**: Make sure you can run `git`, `docker ps`, `docker-compose` without any issue and without sudo command.
-
-
-## Building
-
-`docker-compose build`
-
-## Running
-
-### Start
-
-`docker-compose up -d`
-
-### View logs
-
-`docker-compose logs -f`
-
-### Stop
-
-`docker-compose down`
-
-## Environment variables
-
-You can edit the `docker-compose.yml` and add extra options, such a:
-
-| name | default |
-| ---- | ------- |
-| RPCUSER | dappnode |
-| RPCPASS | dappnode |
-| BITCOIND_HOST | my.bitcoin.dnp.dappnode.eth |
-| NETWORK | mainnet |
-| ALIAS |  |
-| COLOR |  |
-| EXT_IP |  |
-
-## License
-
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details
-
+No funded channels, payment/watchtower database migration, ARM64 build or Angular browser suite is certified by these tests. This source update is not an automatic production-wallet migration.

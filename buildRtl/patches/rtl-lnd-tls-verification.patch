@@ -1,0 +1,1244 @@
+diff --git a/server/controllers/lnd/webSocketClient.ts b/server/controllers/lnd/webSocketClient.ts
+index ac20353..7c1e352 100644
+--- a/server/controllers/lnd/webSocketClient.ts
++++ b/server/controllers/lnd/webSocketClient.ts
+@@ -1,4 +1,5 @@
+ import request from '../../utils/request.js';
++import { lndTlsOptions } from '../../utils/lndTls.js';
+ import * as fs from 'fs';
+ import { join } from 'path';
+ 
+@@ -115,7 +116,7 @@ export class LNDWebSocketClient {
+     this.logger.log({ selectedNode: selectedNode, level: 'INFO', fileName: 'WebSocketClient', msg: 'Subscribing to Invoice ' + rHash + ' ..' });
+     // Copy the options: the caller may pass the session-cached object, and the
+     // long poll needs an unbounded timeout without leaking it to other calls.
+-    options = { ...options, url: url + '/v2/invoices/subscribe/' + rHash, timeout: 0, signal: subscription.controller.signal };
++    options = { ...options, ...lndTlsOptions(selectedNode), url: url + '/v2/invoices/subscribe/' + rHash, timeout: 0, signal: subscription.controller.signal };
+     request(options).then((msg) => {
+       ended();
+       this.logger.log({ selectedNode: selectedNode, level: 'INFO', fileName: 'WebSocketClient', msg: 'Invoice Information Received for ' + rHash });
+@@ -145,7 +146,7 @@ export class LNDWebSocketClient {
+     this.logger.log({ selectedNode: selectedNode, level: 'INFO', fileName: 'WebSocketClient', msg: 'Subscribing to Payment ' + paymentHash + ' ..' });
+     // Copy the options: the long poll needs an unbounded timeout without
+     // leaking it to other calls sharing the object.
+-    options = { ...options, url: selectedNode.settings.lnServerUrl + '/v2/router/track/' + paymentHash, timeout: 0 };
++    options = { ...options, ...lndTlsOptions(selectedNode), url: selectedNode.settings.lnServerUrl + '/v2/router/track/' + paymentHash, timeout: 0 };
+     request(options).then((msg) => {
+       this.logger.log({ selectedNode: selectedNode, level: 'INFO', fileName: 'WebSocketClient', msg: 'Payment Information Received for ' + paymentHash });
+       msg['type'] = 'payment';
+@@ -161,7 +162,7 @@ export class LNDWebSocketClient {
+   };
+ 
+   public setOptionsForSelNode = (selectedNode: SelectedNode) => {
+-    const options = { url: '', rejectUnauthorized: false, json: true, form: null };
++    const options = { ...lndTlsOptions(selectedNode), url: '', rejectUnauthorized: true, json: true, form: null };
+     try {
+       options['headers'] = { 'Grpc-Metadata-macaroon': fs.readFileSync(join(selectedNode.authentication.macaroonPath, 'admin.macaroon')).toString('hex') };
+     } catch (err) {
+diff --git a/server/models/config.model.ts b/server/models/config.model.ts
+index e35e7aa..927d150 100644
+--- a/server/models/config.model.ts
++++ b/server/models/config.model.ts
+@@ -41,7 +41,9 @@ export class Authentication {
+     public runePath?: string,
+     public runeValue?: string,
+     public lnApiPassword?: string,
+-    public swapMacaroonPath?: string
++    public swapMacaroonPath?: string,
++    public tlsCertPath?: string,
++    public tlsAllowEphemeral?: boolean
+   ) { }
+ 
+ }
+diff --git a/server/utils/common.ts b/server/utils/common.ts
+index edba8b1..e58f249 100644
+--- a/server/utils/common.ts
++++ b/server/utils/common.ts
+@@ -4,6 +4,7 @@ import { join, dirname, isAbsolute, resolve, sep } from 'path';
+ import { fileURLToPath } from 'url';
+ import * as crypto from 'crypto';
+ import request from './request.js';
++import { lndTlsOptions } from './lndTls.js';
+ import { Logger, LoggerService } from './logger.js';
+ import { ApplicationConfig, SelectedNode, Settings } from '../models/config.model.js';
+ 
+@@ -71,6 +72,8 @@ export class CommonService {
+       delete node.authentication.runeValue;
+       delete node.authentication.lnApiPassword;
+       delete node.authentication.options;
++      delete node.authentication.tlsCertPath;
++      delete node.authentication.tlsAllowEphemeral;
+     }
+     return node;
+   };
+@@ -173,6 +176,8 @@ export class CommonService {
+         node.authentication.runePath = runtimeNode.authentication?.runePath;
+         node.authentication.lnApiPassword = runtimeNode.authentication?.lnApiPassword;
+         node.authentication.configPath = runtimeNode.authentication?.configPath;
++        node.authentication.tlsCertPath = runtimeNode.authentication?.tlsCertPath;
++        node.authentication.tlsAllowEphemeral = runtimeNode.authentication?.tlsAllowEphemeral;
+         // runeValue is CLN's live rune (setOptions sends it verbatim as the request
+         // header with no file read), so it is pinned like the other credentials even
+         // though the persisted file is stripped of it at save time.
+@@ -204,6 +209,8 @@ export class CommonService {
+           delete node.authentication.runePath;
+           delete node.authentication.lnApiPassword;
+           delete node.authentication.configPath;
++          delete node.authentication.tlsCertPath;
++          delete node.authentication.tlsAllowEphemeral;
+           // The live rune value must be stripped too, not just the path pointer.
+           delete node.authentication.runeValue;
+           delete node.authentication.options;
+@@ -226,7 +233,7 @@ export class CommonService {
+     const swapOptions = {
+       baseUrl: req.session.selectedNode.settings.swapServerUrl,
+       uri: '',
+-      rejectUnauthorized: false,
++      rejectUnauthorized: true,
+       json: true,
+       headers: { 'Grpc-Metadata-macaroon': '' }
+     };
+@@ -243,6 +250,7 @@ export class CommonService {
+ 
+   public getOptions = (req) => {
+     if (req.session.selectedNode && req.session.selectedNode.authentication.options) {
++      Object.assign(req.session.selectedNode.authentication.options, { rejectUnauthorized: true }, lndTlsOptions(req.session.selectedNode));
+       req.session.selectedNode.authentication.options.method = (req.session.selectedNode.lnImplementation && req.session.selectedNode.lnImplementation.toUpperCase() === 'LND') ? 'GET' : 'POST';
+       delete req.session.selectedNode.authentication.options.form;
+       delete req.session.selectedNode.authentication.options.body;
+@@ -260,8 +268,9 @@ export class CommonService {
+       return { status: 401, message: 'Session expired after a day\'s inactivity' };
+     }
+     req.session.selectedNode.authentication.options = {
++      ...lndTlsOptions(req.session.selectedNode),
+       url: '',
+-      rejectUnauthorized: false,
++      rejectUnauthorized: true,
+       json: true,
+       form: null
+     };
+@@ -294,8 +303,9 @@ export class CommonService {
+       return { status: 200, message: 'Updated Successfully' };
+     } catch (err) {
+       req.session.selectedNode.authentication.options = {
++        ...lndTlsOptions(req.session.selectedNode),
+         url: '',
+-        rejectUnauthorized: false,
++        rejectUnauthorized: true,
+         json: true,
+         form: null
+       };
+@@ -320,8 +330,9 @@ export class CommonService {
+       this.nodes.forEach((node) => {
+         if (node.authentication.options && node.authentication.options.headers) { return; }
+         node.authentication.options = {
++          ...lndTlsOptions(node),
+           url: '',
+-          rejectUnauthorized: false,
++          rejectUnauthorized: true,
+           json: true,
+           form: null
+         };
+@@ -351,8 +362,9 @@ export class CommonService {
+         } catch (err) {
+           this.logger.log({ selectedNode: this.selectedNode, level: 'ERROR', fileName: 'Common', msg: 'Common Set Options Error', error: err });
+           node.authentication.options = {
++            ...lndTlsOptions(node),
+             url: '',
+-            rejectUnauthorized: false,
++            rejectUnauthorized: true,
+             json: true,
+             form: ''
+           };
+@@ -637,7 +649,8 @@ export class CommonService {
+     }
+     const options = {
+       url: node.settings.lnServerUrl + '/v1/channels/backup',
+-      rejectUnauthorized: false,
++      ...lndTlsOptions(node),
++      rejectUnauthorized: true,
+       json: true,
+       headers: { 'Grpc-Metadata-macaroon': macaroon }
+     };
+diff --git a/server/utils/config.ts b/server/utils/config.ts
+index 916912b..a4c98b8 100644
+--- a/server/utils/config.ts
++++ b/server/utils/config.ts
+@@ -1,6 +1,6 @@
+ import * as os from 'os';
+ import * as fs from 'fs';
+-import { join, dirname, sep } from 'path';
++import { join, dirname, sep, isAbsolute } from 'path';
+ import { fileURLToPath } from 'url';
+ import * as crypto from 'crypto';
+ import ini from 'ini';
+@@ -208,6 +208,17 @@ export class ConfigService {
+             }
+             break;
+         }
++        const tlsCertPath = node.authentication?.tlsCertPath;
++        const tlsAllowEphemeral = node.authentication?.tlsAllowEphemeral;
++        if (tlsCertPath !== undefined && (typeof tlsCertPath !== 'string' || !isAbsolute(tlsCertPath))) {
++          this.errMsg += '\nLND tlsCertPath must be an absolute public certificate path.';
++        }
++        if (tlsAllowEphemeral !== undefined && typeof tlsAllowEphemeral !== 'boolean') {
++          this.errMsg += '\nLND tlsAllowEphemeral must be a boolean.';
++        }
++        if (tlsAllowEphemeral === true && !tlsCertPath) { this.errMsg += '\nLND tlsAllowEphemeral requires tlsCertPath.'; }
++        this.common.nodes[idx].authentication.tlsCertPath = tlsCertPath;
++        this.common.nodes[idx].authentication.tlsAllowEphemeral = tlsAllowEphemeral;
+         if (process?.env?.CONFIG_PATH) {
+           this.common.nodes[idx].authentication.configPath = process?.env?.CONFIG_PATH;
+         } else if (node.authentication && node.authentication.configPath) {
+diff --git a/server/utils/lndTls.ts b/server/utils/lndTls.ts
+new file mode 100644
+index 0000000..ed36818
+--- /dev/null
++++ b/server/utils/lndTls.ts
+@@ -0,0 +1,84 @@
++import { closeSync, fstatSync, openSync, readFileSync } from 'node:fs';
++import { Agent } from 'node:https';
++import { isAbsolute } from 'node:path';
++import { X509Certificate } from 'node:crypto';
++
++export interface LndTlsPolicy {
++  origin: string;
++  certPath?: string;
++  allowEphemeral?: boolean;
++}
++
++const tlsError = (code: string, message: string): Error & { code: string } => Object.assign(new Error(message), { code });
++
++// Keep paths and the credentialed origin in server-owned node configuration. Carry plain
++// metadata, not Agent instances, because RTL clones selected nodes into sessions.
++export const lndTlsOptions = (node) => {
++  if ((node?.lnImplementation || 'LND').toUpperCase() !== 'LND') { return {}; }
++  return {
++    lndTls: {
++      origin: node?.settings?.lnServerUrl,
++      certPath: node?.authentication?.tlsCertPath,
++      allowEphemeral: node?.authentication?.tlsAllowEphemeral === true
++    } as LndTlsPolicy
++  };
++};
++
++const readCertificate = (path: string): Buffer | undefined => {
++  let fd: number;
++  try {
++    fd = openSync(path, 'r');
++  } catch (err) {
++    if (err.code === 'ENOENT') { return undefined; }
++    throw tlsError('LND_TLS_CERT_UNAVAILABLE', 'Cannot read the configured LND TLS certificate.');
++  }
++  try {
++    const stat = fstatSync(fd);
++    if (!stat.isFile() || stat.size === 0 || stat.size > 65536) { throw new Error('Invalid certificate file'); }
++    const data = readFileSync(fd);
++    const text = data.toString('utf8');
++    const certs = text.match(/-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g);
++    if (!certs?.length || /PRIVATE KEY/.test(text)) { throw new Error('Public certificates only'); }
++    for (const pem of certs) { new X509Certificate(pem); }
++    return data;
++  } catch {
++    throw tlsError('LND_TLS_CERT_INVALID', 'The configured LND TLS certificate is invalid or not ready.');
++  } finally {
++    closeSync(fd);
++  }
++};
++
++export const createLndTlsAgent = (policy: LndTlsPolicy, url: string, baseUrl?: string): Agent => {
++  let expected: URL;
++  let target: URL;
++  try {
++    expected = new URL(policy.origin);
++    target = baseUrl ? new URL(url, baseUrl) : new URL(url);
++  } catch {
++    throw tlsError('LND_TLS_ORIGIN', 'Invalid LND HTTPS endpoint configuration.');
++  }
++  if (expected.protocol !== 'https:' || target.protocol !== 'https:' || target.origin !== expected.origin ||
++    expected.username || expected.password || expected.search || expected.hash || target.username || target.password) {
++    throw tlsError('LND_TLS_ORIGIN', 'LND requests require HTTPS to the configured node origin.');
++  }
++
++  let ca: Buffer[] | undefined;
++  if (policy.certPath !== undefined) {
++    if (typeof policy.certPath !== 'string' || !isAbsolute(policy.certPath)) {
++      throw tlsError('LND_TLS_CERT_INVALID', 'LND tlsCertPath must be an absolute public certificate path.');
++    }
++    // A missing permanent file is legitimate while encrypted-key LND uses its local,
++    // temporary pre-unlock certificate. Never learn trust from a network handshake.
++    ca = [readCertificate(policy.certPath)];
++    if (policy.allowEphemeral) { ca.push(readCertificate(policy.certPath + '.tmp')); }
++    ca = ca.filter((cert) => cert !== undefined);
++    if (ca.length === 0) { throw tlsError('LND_TLS_CERT_UNAVAILABLE', 'LND TLS certificate is not ready; wait for LND or check its certificate configuration.'); }
++  } else if (policy.allowEphemeral) {
++    throw tlsError('LND_TLS_CERT_INVALID', 'Temporary LND certificate trust requires tlsCertPath.');
++  }
++
++  // A fresh agent reads current local trust on each request. No cross-request connection
++  // or TLS-session reuse can retain an old certificate across LND renewal/unlock.
++  // Node's built-in hostname/expiry checks remain enabled.
++  return new Agent({ ca, rejectUnauthorized: true, keepAlive: false, maxCachedSessions: 0 });
++};
+diff --git a/server/utils/request.ts b/server/utils/request.ts
+index 03c3b3a..f9ee424 100644
+--- a/server/utils/request.ts
++++ b/server/utils/request.ts
+@@ -1,5 +1,6 @@
+ import axios from 'axios';
+ import * as https from 'https';
++import { createLndTlsAgent } from './lndTls.js';
+ 
+ // Drop-in replacement for the deprecated request-promise, backed by axios.
+ // Accepts the same options shape used across the controllers ({ url, baseUrl,
+@@ -9,7 +10,7 @@ import * as https from 'https';
+ // CommonService.handleError. Auth headers are intentionally excluded from the
+ // rejected error so they can never leak into logs or API error responses.
+ 
+-const insecureAgent = new https.Agent({ rejectUnauthorized: false });
++const verifiedAgent = new https.Agent({ rejectUnauthorized: true });
+ 
+ const buildConfig = (options, method: string) => {
+   const config: any = {
+@@ -25,7 +26,6 @@ const buildConfig = (options, method: string) => {
+   };
+   if (options.baseUrl) { config.baseURL = options.baseUrl; }
+   if (options.qs && Object.keys(options.qs).length > 0) { config.params = options.qs; }
+-  if (options.rejectUnauthorized === false) { config.httpsAgent = insecureAgent; }
+   // Lets a caller abort a call it no longer wants, such as an unbounded long poll it replaces.
+   if (options.signal) { config.signal = options.signal; }
+   if (options.form !== null && options.form !== undefined) {
+@@ -55,6 +55,10 @@ const buildConfig = (options, method: string) => {
+     config.responseType = 'text';
+     config.transformResponse = [(data) => data];
+   }
++  // Legacy rejectUnauthorized:false options no longer disable verification. The local
++  // LND gets only its configured public certificate(s), bound to its exact origin.
++  config.httpsAgent = options.lndTls ? createLndTlsAgent(options.lndTls, config.url, config.baseURL) : verifiedAgent;
++  if (options.lndTls) { config.maxRedirects = 0; }
+   return config;
+ };
+ 
+@@ -78,9 +82,18 @@ const toRequestPromiseError = (err, config) => {
+   };
+ };
+ 
+-const call = (options, method?: string) => {
+-  const config = buildConfig(options, method);
+-  return axios.request(config).then((response) => response.data).catch((err) => Promise.reject(toRequestPromiseError(err, config)));
++const call = async (options, method?: string) => {
++  let config: any = { method: method || options.method || 'GET' };
++  try {
++    config = buildConfig(options, method);
++    return (await axios.request(config)).data;
++  } catch (err) {
++    // Also turn certificate-read/validation failures into rejected request promises.
++    // Controllers already handle this shape, so a not-yet-created cert cannot crash RTL.
++    throw toRequestPromiseError(err, config);
++  } finally {
++    if (options.lndTls) { config.httpsAgent?.destroy(); }
++  }
+ };
+ 
+ const request = (options) => call(options);
+diff --git a/test/backend/boot-config.test.mjs b/test/backend/boot-config.test.mjs
+index 6fbfacd..e68de43 100644
+--- a/test/backend/boot-config.test.mjs
++++ b/test/backend/boot-config.test.mjs
+@@ -1,6 +1,6 @@
+ import assert from 'node:assert/strict';
+ import { spawn } from 'node:child_process';
+-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
++import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+ import { tmpdir } from 'node:os';
+ import { dirname, join } from 'node:path';
+ import test, { after } from 'node:test';
+@@ -99,3 +99,32 @@ test('a well-formed trustedProxies list boots (control for the refusals above)',
+   const result = await boot(writeConfig('127.0.0.1, 10.0.0.0/8'));
+   assert.equal(result.code, 'listening', 'stderr: ' + result.stderr);
+ });
++
++for (const [auth, message] of [
++  [{ tlsCertPath: 'relative/cert' }, /tlsCertPath must be an absolute/],
++  [{ tlsCertPath: 123 }, /tlsCertPath must be an absolute/],
++  [{ tlsAllowEphemeral: 'true' }, /tlsAllowEphemeral must be a boolean/],
++  [{ tlsAllowEphemeral: true }, /tlsAllowEphemeral requires tlsCertPath/]
++]) {
++  test('bad server-owned LND TLS configuration refuses boot: ' + JSON.stringify(auth), async () => {
++    const dir = writeConfig();
++    const path = join(dir, 'RTL-Config.json');
++    const config = JSON.parse(readFileSync(path, 'utf8'));
++    Object.assign(config.nodes[0].authentication, auth);
++    writeFileSync(path, JSON.stringify(config));
++    const result = await boot(dir);
++    assert.equal(result.code, 1);
++    assert.match(result.stderr, message);
++  });
++}
++
++test('a configured certificate that LND has not created yet does not block the RTL UI', async () => {
++  const dir = writeConfig();
++  const path = join(dir, 'RTL-Config.json');
++  const config = JSON.parse(readFileSync(path, 'utf8'));
++  config.nodes[0].authentication.tlsCertPath = join(dir, 'not-created.cert');
++  config.nodes[0].authentication.tlsAllowEphemeral = true;
++  writeFileSync(path, JSON.stringify(config));
++  const result = await boot(dir);
++  assert.equal(result.code, 'listening', result.stderr);
++});
+diff --git a/test/backend/cross-session-options.test.mjs b/test/backend/cross-session-options.test.mjs
+index 74527a0..764e490 100644
+--- a/test/backend/cross-session-options.test.mjs
++++ b/test/backend/cross-session-options.test.mjs
+@@ -1,5 +1,6 @@
+ import assert from 'node:assert/strict';
+ import { createServer } from 'node:http';
++import { createServer as createLndServer, tlsCertPath } from '../helpers/lnd-https.mjs';
+ import test, { after } from 'node:test';
+ 
+ import { getAllChannels, getPendingChannels, getClosedChannels } from '../../backend/controllers/lnd/channels.js';
+@@ -35,7 +36,8 @@ const startNode = async (credHeader, responses, gatePath) => {
+   let gateHit;
+   const gateReached = new Promise((resolve) => { gateHit = resolve; });
+   let gated = false;
+-  const server = createServer((req, res) => {
++  const secure = credHeader === 'grpc-metadata-macaroon';
++  const server = (secure ? createLndServer : createServer)((req, res) => {
+     req.on('data', () => { });
+     req.on('end', async () => {
+       const path = req.url.split('?')[0];
+@@ -53,7 +55,7 @@ const startNode = async (credHeader, responses, gatePath) => {
+   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+   return {
+     seen, release, gateReached,
+-    url: `http://127.0.0.1:${server.address().port}`,
++    url: `${secure ? "https" : "http"}://127.0.0.1:${server.address().port}`,
+     close: () => { release(); return new Promise((resolve) => server.close(resolve)); }
+   };
+ };
+@@ -61,7 +63,7 @@ const startNode = async (credHeader, responses, gatePath) => {
+ const session = (impl, index, url, headers) => ({
+   selectedNode: {
+     index, lnNode: 'node-' + index, lnImplementation: impl,
+-    authentication: { options: { url: '', rejectUnauthorized: false, json: true, headers } },
++    authentication: { tlsCertPath, options: { url: '', rejectUnauthorized: false, json: true, headers } },
+     settings: { lnServerUrl: url, logLevel: 'ERROR' }
+   }
+ });
+diff --git a/test/backend/lnd-channel-backup.test.mjs b/test/backend/lnd-channel-backup.test.mjs
+index 2acde45..040b78c 100644
+--- a/test/backend/lnd-channel-backup.test.mjs
++++ b/test/backend/lnd-channel-backup.test.mjs
+@@ -1,6 +1,6 @@
+ import assert from 'node:assert/strict';
+ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+-import { createServer } from 'node:http';
++import { createServer as createLndServer, tlsCertPath } from '../helpers/lnd-https.mjs';
+ import { tmpdir } from 'node:os';
+ import { join, parse } from 'node:path';
+ import test from 'node:test';
+@@ -17,7 +17,7 @@ const BACKUP = { chan_point: { funding_txid_str: TXID, output_index: 1 }, chan_b
+ 
+ const startFakeLnd = async () => {
+   const seen = [];
+-  const server = createServer((req, res) => {
++  const server = createLndServer((req, res) => {
+     let body = '';
+     req.on('data', (chunk) => { body += chunk; });
+     req.on('end', () => {
+@@ -27,7 +27,7 @@ const startFakeLnd = async () => {
+     });
+   });
+   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+-  const url = `http://127.0.0.1:${server.address().port}`;
++  const url = `https://127.0.0.1:${server.address().port}`;
+   return { url, seen, close: () => new Promise((resolve) => server.close(resolve)) };
+ };
+ 
+@@ -35,7 +35,7 @@ const buildRequest = (url, channelBackupPath, channelPoint) => ({
+   session: {
+     selectedNode: {
+       index: 1, lnNode: 'test-node', lnImplementation: 'LND', lnVersion: '0.18.0',
+-      authentication: { options: { url: '', rejectUnauthorized: false, json: true, headers: { 'Grpc-Metadata-macaroon': 'mac' } } },
++      authentication: { tlsCertPath, options: { url: '', rejectUnauthorized: false, json: true, headers: { 'Grpc-Metadata-macaroon': 'mac' } } },
+       settings: { lnServerUrl: url, channelBackupPath, logLevel: 'ERROR' }
+     }
+   },
+diff --git a/test/backend/lnd-channels.test.mjs b/test/backend/lnd-channels.test.mjs
+index 43b838c..3e1f27a 100644
+--- a/test/backend/lnd-channels.test.mjs
++++ b/test/backend/lnd-channels.test.mjs
+@@ -1,5 +1,5 @@
+ import assert from 'node:assert/strict';
+-import { createServer } from 'node:http';
++import { createServer as createLndServer, tlsCertPath } from '../helpers/lnd-https.mjs';
+ import test from 'node:test';
+ 
+ import { postChannel } from '../../backend/controllers/lnd/channels.js';
+@@ -14,7 +14,7 @@ import { postChannel } from '../../backend/controllers/lnd/channels.js';
+ 
+ const startFakeLnd = async (macaroon) => {
+   const seen = [];
+-  const server = createServer((req, res) => {
++  const server = createLndServer((req, res) => {
+     let raw = '';
+     req.on('data', (chunk) => { raw += chunk; });
+     req.on('end', () => {
+@@ -26,7 +26,7 @@ const startFakeLnd = async (macaroon) => {
+   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+   return {
+     seen,
+-    url: `http://127.0.0.1:${server.address().port}`,
++    url: `https://127.0.0.1:${server.address().port}`,
+     macaroon,
+     close: () => new Promise((resolve) => server.close(resolve))
+   };
+@@ -38,7 +38,7 @@ const buildRequest = (node, body) => ({
+       index: 1,
+       lnNode: 'lnd-node',
+       lnImplementation: 'LND',
+-      authentication: {
++      authentication: { tlsCertPath,
+         options: { url: '', rejectUnauthorized: false, json: true, headers: { 'Grpc-Metadata-macaroon': node.macaroon } }
+       },
+       settings: { lnServerUrl: node.url, logLevel: 'ERROR' }
+diff --git a/test/backend/lnd-getinfo-backup.test.mjs b/test/backend/lnd-getinfo-backup.test.mjs
+index 01d8b59..9934294 100644
+--- a/test/backend/lnd-getinfo-backup.test.mjs
++++ b/test/backend/lnd-getinfo-backup.test.mjs
+@@ -1,6 +1,6 @@
+ import assert from 'node:assert/strict';
+ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+-import { createServer } from 'node:http';
++import { createServer as createLndServer, tlsCertPath } from '../helpers/lnd-https.mjs';
+ import { tmpdir } from 'node:os';
+ import { join } from 'node:path';
+ import test, { after, afterEach } from 'node:test';
+@@ -28,7 +28,7 @@ const OLD_BACKUP = JSON.stringify({ multi_chan_backup: { chan_points: [], multi_
+ // backup: 'ok' answers the snapshot, 'fail' answers 500, 'empty' answers 200 with no body.
+ const startFakeLnd = async (backup = 'ok') => {
+   const seen = [];
+-  const server = createServer((req, res) => {
++  const server = createLndServer((req, res) => {
+     req.on('data', () => { });
+     req.on('end', () => {
+       seen.push(req.url);
+@@ -51,7 +51,7 @@ const startFakeLnd = async (backup = 'ok') => {
+     });
+   });
+   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+-  const url = `http://127.0.0.1:${server.address().port}`;
++  const url = `https://127.0.0.1:${server.address().port}`;
+   return { url, seen, close: () => new Promise((resolve) => server.close(resolve)) };
+ };
+ 
+@@ -67,7 +67,7 @@ const makeNode = (root, index, url, { macaroon = true } = {}) => {
+   }
+   return {
+     index, lnNode: `node-${index}`, lnImplementation: 'LND',
+-    authentication: { macaroonPath },
++    authentication: { tlsCertPath, macaroonPath },
+     settings: { lnServerUrl: url, channelBackupPath, logLevel: 'ERROR' }
+   };
+ };
+@@ -138,7 +138,7 @@ test('overlapping refreshes of one node each write their own temp file', async (
+   const big = { ...BACKUP, single_chan_backups: { chan_backups: [{ chan_backup: 'x'.repeat(4 * 1024 * 1024) }] } };
+   const REFRESHES = 6;
+   const held = [];
+-  const server = createServer((req, res) => {
++  const server = createLndServer((req, res) => {
+     req.on('data', () => { });
+     req.on('end', () => {
+       held.push(res);
+@@ -149,7 +149,7 @@ test('overlapping refreshes of one node each write their own temp file', async (
+   });
+   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+   const root = mkdtempSync(join(tmpdir(), 'rtl-getinfo-'));
+-  const node = makeNode(root, 1, `http://127.0.0.1:${server.address().port}`);
++  const node = makeNode(root, 1, `https://127.0.0.1:${server.address().port}`);
+   const errors = [];
+   const log = Logger.log;
+   Logger.log = (msg) => { if (msg.level === 'ERROR') { errors.push(msg.msg + ': ' + (msg.error?.message || '')); } return log(msg); };
+diff --git a/test/backend/lnd-invoice-subscriptions.test.mjs b/test/backend/lnd-invoice-subscriptions.test.mjs
+index 997490b..97ccbff 100644
+--- a/test/backend/lnd-invoice-subscriptions.test.mjs
++++ b/test/backend/lnd-invoice-subscriptions.test.mjs
+@@ -1,6 +1,6 @@
+ import assert from 'node:assert/strict';
+ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+-import { createServer } from 'node:http';
++import { createServer as createLndServer, tlsCertPath } from '../helpers/lnd-https.mjs';
+ import { tmpdir } from 'node:os';
+ import { join } from 'node:path';
+ import test, { after, afterEach, beforeEach, mock } from 'node:test';
+@@ -39,7 +39,7 @@ const OPEN = [1, 2, 3].map((n) => ({ r_hash: hashOf(n), state: 'OPEN' }));
+ const startFakeLnd = async () => {
+   const subscribes = [];
+   const state = { invoices: OPEN };
+-  const server = createServer((req, res) => {
++  const server = createLndServer((req, res) => {
+     req.on('data', () => { });
+     req.on('end', () => {
+       const path = req.url.split('?')[0];
+@@ -65,7 +65,7 @@ const startFakeLnd = async () => {
+   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+   return {
+     subscribes, state,
+-    url: `http://127.0.0.1:${server.address().port}`,
++    url: `https://127.0.0.1:${server.address().port}`,
+     close: () => { server.closeAllConnections(); return new Promise((resolve) => server.close(resolve)); }
+   };
+ };
+@@ -78,7 +78,7 @@ const makeNode = (index, url) => {
+   const options = { url: '', rejectUnauthorized: false, json: true, headers: { 'Grpc-Metadata-macaroon': Buffer.from('mac-' + index).toString('hex') } };
+   return {
+     index, lnNode: 'node-' + index, lnImplementation: 'LND',
+-    authentication: { macaroonPath, options },
++    authentication: { tlsCertPath, macaroonPath, options },
+     settings: { lnServerUrl: url, logLevel: 'ERROR' }
+   };
+ };
+diff --git a/test/backend/lnd-invoices.test.mjs b/test/backend/lnd-invoices.test.mjs
+index 9db7c80..6fcf077 100644
+--- a/test/backend/lnd-invoices.test.mjs
++++ b/test/backend/lnd-invoices.test.mjs
+@@ -1,18 +1,18 @@
+ import assert from 'node:assert/strict';
+-import { createServer } from 'node:http';
++import { createServer as createLndServer, tlsCertPath } from '../helpers/lnd-https.mjs';
+ import test from 'node:test';
+ 
+ import { listInvoices } from '../../backend/controllers/lnd/invoices.js';
+ 
+ const startFakeLnd = async (macaroon, invoices) => {
+   const seen = [];
+-  const server = createServer((req, res) => {
++  const server = createLndServer((req, res) => {
+     seen.push({ method: req.method, path: req.url, macaroon: req.headers['grpc-metadata-macaroon'] });
+     res.writeHead(200, { 'Content-Type': 'application/json' });
+     res.end(JSON.stringify({ invoices }));
+   });
+   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+-  const url = `http://127.0.0.1:${server.address().port}`;
++  const url = `https://127.0.0.1:${server.address().port}`;
+   return {
+     url,
+     seen,
+@@ -26,7 +26,7 @@ const buildRequest = (node, query = {}) => ({
+       index: 1,
+       lnNode: 'test-node',
+       lnImplementation: 'LND',
+-      authentication: {
++      authentication: { tlsCertPath,
+         options: {
+           url: '',
+           rejectUnauthorized: false,
+diff --git a/test/backend/lnd-path-params.test.mjs b/test/backend/lnd-path-params.test.mjs
+index e06abb3..81a0052 100644
+--- a/test/backend/lnd-path-params.test.mjs
++++ b/test/backend/lnd-path-params.test.mjs
+@@ -1,5 +1,5 @@
+ import assert from 'node:assert/strict';
+-import { createServer } from 'node:http';
++import { createServer as createLndServer, tlsCertPath } from '../helpers/lnd-https.mjs';
+ import test from 'node:test';
+ 
+ import { getAliasesForPubkeys, getGraphEdge, getGraphNode, getQueryRoutes, getRemoteFeePolicy } from '../../backend/controllers/lnd/graph.js';
+@@ -14,13 +14,13 @@ import { deletePeer } from '../../backend/controllers/lnd/peers.js';
+ 
+ const startFakeServer = async (reply = () => ({})) => {
+   const seen = [];
+-  const server = createServer((req, res) => {
++  const server = createLndServer((req, res) => {
+     seen.push({ method: req.method, path: req.url });
+     res.writeHead(200, { 'Content-Type': 'application/json' });
+     res.end(JSON.stringify(reply(req.url)));
+   });
+   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+-  const url = `http://127.0.0.1:${server.address().port}`;
++  const url = `https://127.0.0.1:${server.address().port}`;
+   return { url, seen, close: () => new Promise((resolve) => server.close(resolve)) };
+ };
+ 
+@@ -28,7 +28,7 @@ const buildRequest = (url, { query = {}, params = {}, body = {}, macaroon = 'mac
+   session: {
+     selectedNode: {
+       index: 1, lnNode: 'test-node', lnImplementation: 'LND', lnVersion: '0.18.0',
+-      authentication: { options: { url: '', rejectUnauthorized: false, json: true, headers: { 'Grpc-Metadata-macaroon': macaroon } } },
++      authentication: { tlsCertPath, options: { url: '', rejectUnauthorized: false, json: true, headers: { 'Grpc-Metadata-macaroon': macaroon } } },
+       settings: { lnServerUrl: url, logLevel: 'ERROR' }
+     }
+   },
+@@ -175,7 +175,7 @@ test('decodePayments: a payments value that is not a string is refused with 400'
+ const startSlowServer = async () => {
+   const seen = [];
+   const load = { inFlight: 0, max: 0 };
+-  const server = createServer((req, res) => {
++  const server = createLndServer((req, res) => {
+     seen.push({ path: req.url, macaroon: req.headers['grpc-metadata-macaroon'] });
+     load.inFlight++;
+     load.max = Math.max(load.max, load.inFlight);
+@@ -186,7 +186,7 @@ const startSlowServer = async () => {
+     }, 20);
+   });
+   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+-  const url = `http://127.0.0.1:${server.address().port}`;
++  const url = `https://127.0.0.1:${server.address().port}`;
+   return { url, seen, load, close: () => new Promise((resolve) => server.close(resolve)) };
+ };
+ 
+diff --git a/test/backend/lnd-payments.test.mjs b/test/backend/lnd-payments.test.mjs
+index 0e35eff..1104fb1 100644
+--- a/test/backend/lnd-payments.test.mjs
++++ b/test/backend/lnd-payments.test.mjs
+@@ -1,18 +1,18 @@
+ import assert from 'node:assert/strict';
+-import { createServer } from 'node:http';
++import { createServer as createLndServer, tlsCertPath } from '../helpers/lnd-https.mjs';
+ import test from 'node:test';
+ 
+ import { getPayments } from '../../backend/controllers/lnd/payments.js';
+ 
+ const startFakeLnd = async (macaroon, payments) => {
+   const seen = [];
+-  const server = createServer((req, res) => {
++  const server = createLndServer((req, res) => {
+     seen.push({ method: req.method, path: req.url, macaroon: req.headers['grpc-metadata-macaroon'] });
+     res.writeHead(200, { 'Content-Type': 'application/json' });
+     res.end(JSON.stringify({ payments }));
+   });
+   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+-  const url = `http://127.0.0.1:${server.address().port}`;
++  const url = `https://127.0.0.1:${server.address().port}`;
+   return {
+     url,
+     seen,
+@@ -26,7 +26,7 @@ const buildRequest = (node, query = {}) => ({
+       index: 1,
+       lnNode: 'test-node',
+       lnImplementation: 'LND',
+-      authentication: {
++      authentication: { tlsCertPath,
+         options: {
+           url: '',
+           rejectUnauthorized: false,
+diff --git a/test/backend/lnd-peers.test.mjs b/test/backend/lnd-peers.test.mjs
+index fc6f290..43e9ab9 100644
+--- a/test/backend/lnd-peers.test.mjs
++++ b/test/backend/lnd-peers.test.mjs
+@@ -1,5 +1,5 @@
+ import assert from 'node:assert/strict';
+-import { createServer } from 'node:http';
++import { createServer as createLndServer, tlsCertPath } from '../helpers/lnd-https.mjs';
+ import test from 'node:test';
+ 
+ import { getPeers, postPeer } from '../../backend/controllers/lnd/peers.js';
+@@ -27,7 +27,7 @@ const startFakeLnd = async (name, macaroon, peers) => {
+     holdPeersList = { pending: null };
+   };
+ 
+-  const server = createServer((req, res) => {
++  const server = createLndServer((req, res) => {
+     const record = { method: req.method, path: req.url, macaroon: req.headers['grpc-metadata-macaroon'] };
+     seen.push(record);
+     const reply = (status, body) => {
+@@ -49,7 +49,7 @@ const startFakeLnd = async (name, macaroon, peers) => {
+     reply(404, { message: 'unexpected ' + req.method + ' ' + req.url });
+   });
+   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+-  const url = `http://127.0.0.1:${server.address().port}`;
++  const url = `https://127.0.0.1:${server.address().port}`;
+ 
+   return {
+     name, macaroon, url, seen,
+@@ -67,7 +67,7 @@ const buildRequest = (node, body = {}) => ({
+       index: 1,
+       lnNode: node.name,
+       lnImplementation: 'LND',
+-      authentication: {
++      authentication: { tlsCertPath,
+         options: { url: '', rejectUnauthorized: false, json: true, headers: { 'Grpc-Metadata-macaroon': node.macaroon } }
+       },
+       settings: { lnServerUrl: node.url, logLevel: 'ERROR' }
+diff --git a/test/backend/lnd-send-payment-no-route.test.mjs b/test/backend/lnd-send-payment-no-route.test.mjs
+index 61e8851..cbfdc48 100644
+--- a/test/backend/lnd-send-payment-no-route.test.mjs
++++ b/test/backend/lnd-send-payment-no-route.test.mjs
+@@ -1,5 +1,5 @@
+ import assert from 'node:assert/strict';
+-import { createServer } from 'node:http';
++import { createServer as createLndServer, tlsCertPath } from '../helpers/lnd-https.mjs';
+ import test from 'node:test';
+ 
+ import { sendPayment } from '../../backend/controllers/lnd/payments.js';
+@@ -11,7 +11,7 @@ const DEST = '0323ce56abc0fec923dd89b443f5e8a17b0bd7b64000ab703859d49d9b879e6a23
+ // route query answers with a route costing `routeFeeSat`, or with an error when `routesStatus` isn't 200.
+ const startFakeLnd = async ({ failureReason = 'FAILURE_REASON_NO_ROUTE', decoded = {}, routeFeeSat = '500000', routesStatus = 200 } = {}) => {
+   const seen = [];
+-  const server = createServer((req, res) => {
++  const server = createLndServer((req, res) => {
+     seen.push(req.method + ' ' + req.url);
+     if (req.url === '/v2/router/send') {
+       res.writeHead(200, { 'Content-Type': 'application/json' });
+@@ -28,7 +28,7 @@ const startFakeLnd = async ({ failureReason = 'FAILURE_REASON_NO_ROUTE', decoded
+     }
+   });
+   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+-  return { url: `http://127.0.0.1:${server.address().port}`, seen, close: () => new Promise((resolve) => server.close(resolve)) };
++  return { url: `https://127.0.0.1:${server.address().port}`, seen, close: () => new Promise((resolve) => server.close(resolve)) };
+ };
+ 
+ const buildRequest = (lnd, body) => ({
+@@ -37,7 +37,7 @@ const buildRequest = (lnd, body) => ({
+       index: 1,
+       lnNode: 'test-node',
+       lnImplementation: 'LND',
+-      authentication: { options: { url: '', rejectUnauthorized: false, json: true, headers: { 'Grpc-Metadata-macaroon': 'mac' } } },
++      authentication: { tlsCertPath, options: { url: '', rejectUnauthorized: false, json: true, headers: { 'Grpc-Metadata-macaroon': 'mac' } } },
+       settings: { lnServerUrl: lnd.url, logLevel: 'ERROR' }
+     }
+   },
+diff --git a/test/backend/lnd-tls.test.mjs b/test/backend/lnd-tls.test.mjs
+new file mode 100644
+index 0000000..5d4ec0f
+--- /dev/null
++++ b/test/backend/lnd-tls.test.mjs
+@@ -0,0 +1,167 @@
++import assert from 'node:assert/strict';
++import { chmodSync, copyFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
++import { createServer } from 'node:https';
++import { tmpdir } from 'node:os';
++import { join } from 'node:path';
++import test, { after } from 'node:test';
++import { certificate } from '../helpers/lnd-https.mjs';
++import request from '../../backend/utils/request.js';
++import { lndTlsOptions } from '../../backend/utils/lndTls.js';
++import { Common } from '../../backend/utils/common.js';
++import { LNDWSClient } from '../../backend/controllers/lnd/webSocketClient.js';
++import { WSServer } from '../../backend/utils/webSocketServer.js';
++
++const root = mkdtempSync(join(tmpdir(), 'rtl-tls-test-'));
++after(() => { clearInterval(WSServer.pingInterval); rmSync(root, { recursive: true, force: true }); });
++const trusted = certificate();
++const impostor = certificate();
++const credential = 'synthetic-macaroon-do-not-log';
++const listen = async (pair = trusted, handler) => {
++  const seen = [];
++  const server = createServer({ key: pair.key, cert: pair.cert }, (req, res) => {
++    seen.push({ url: req.url, credential: req.headers['grpc-metadata-macaroon'] });
++    req.resume();
++    if (handler) { handler(req, res); } else { res.setHeader('Content-Type', 'application/json'); res.end('{"ok":true}'); }
++  });
++  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
++  return { server, seen, url: `https://127.0.0.1:${server.address().port}`, close: () => { server.closeAllConnections(); return new Promise((resolve) => server.close(resolve)); } };
++};
++const options = (url, certPath = trusted.certPath, extra = {}) => ({
++  url, json: true, timeout: 2000, rejectUnauthorized: false,
++  headers: { 'Grpc-Metadata-macaroon': credential },
++  lndTls: { origin: url, certPath, ...extra }
++});
++const rejects = (promise, code) => assert.rejects(promise, (error) => {
++  assert.equal(error.name, 'RequestError');
++  if (code) { assert.match(error.error.code, code); }
++  assert.ok(!JSON.stringify(error).includes(credential));
++  assert.ok(!JSON.stringify(error).includes('PRIVATE KEY'));
++  return true;
++});
++
++test('verified local certificate works even with legacy insecure options; errors omit credentials', async () => {
++  const lnd = await listen();
++  try {
++    assert.deepEqual(await request(options(lnd.url)), { ok: true });
++    assert.equal(lnd.seen[0].credential, credential);
++    await rejects(request(options(lnd.url, impostor.certPath)));
++    assert.equal(lnd.seen.length, 1, 'untrusted handshake sent no HTTP request');
++  } finally { await lnd.close(); }
++});
++
++for (const [name, pair, code] of [
++  ['untrusted', impostor, /SELF_SIGNED|VERIFY_LEAF/],
++  ['wrong hostname', certificate({ san: 'DNS:another-node.invalid' }), /ALTNAME/],
++  ['expired', certificate({ expired: true }), /CERT_HAS_EXPIRED/]
++]) {
++  test(`${name} certificate is rejected before any macaroon is delivered`, async () => {
++    const lnd = await listen(pair);
++    try {
++      await rejects(request(options(lnd.url, name === 'untrusted' ? trusted.certPath : pair.certPath)), code);
++      assert.deepEqual(lnd.seen, []);
++    } finally { await lnd.close(); }
++  });
++}
++
++test('missing, malformed, unreadable and private-key trust files fail safely and recover', async () => {
++  const lnd = await listen();
++  const path = join(root, 'changing.cert');
++  try {
++    await rejects(request(options(lnd.url, path)), /LND_TLS_CERT_UNAVAILABLE/);
++    for (const invalid of ['', 'not a certificate', trusted.key, Buffer.concat([trusted.cert, trusted.key])]) {
++      writeFileSync(path, invalid);
++      await rejects(request(options(lnd.url, path)), /LND_TLS_CERT_INVALID/);
++    }
++    copyFileSync(trusted.certPath, path); chmodSync(path, 0);
++    await rejects(request(options(lnd.url, path)), /LND_TLS_CERT_UNAVAILABLE/);
++    chmodSync(path, 0o600);
++    assert.deepEqual(await request(options(lnd.url, path)), { ok: true });
++    assert.equal(lnd.seen.length, 1);
++  } finally { chmodSync(path, 0o600); await lnd.close(); }
++});
++
++test('rejects HTTP, mismatched origins, userinfo and relative certificate paths without connecting', async () => {
++  const lnd = await listen();
++  try {
++    for (const target of [lnd.url.replace('https:', 'http:'), lnd.url.replace('127.0.0.1', 'localhost'), lnd.url.replace('https://', 'https://user:password@'), 'invalid']) {
++      const opts = options(lnd.url); opts.url = target;
++      await rejects(request(opts), /LND_TLS_ORIGIN/);
++    }
++    await rejects(request(options(lnd.url, './tls.cert')), /LND_TLS_CERT_INVALID/);
++    const noPath = options(lnd.url); delete noPath.lndTls.certPath; noPath.lndTls.allowEphemeral = true;
++    await rejects(request(noPath), /LND_TLS_CERT_INVALID/);
++    assert.deepEqual(lnd.seen, []);
++  } finally { await lnd.close(); }
++});
++
++test('credentialed redirects are rejected and a mutating request is never replayed', async () => {
++  const receiver = await listen();
++  const sender = await listen(trusted, (_req, res) => { res.writeHead(307, { Location: receiver.url }); res.end(); });
++  try {
++    await assert.rejects(request.post({ ...options(sender.url), body: { amount: 1 } }), (e) => e.statusCode === 307);
++    assert.equal(sender.seen.length, 1);
++    assert.deepEqual(receiver.seen, []);
++  } finally { await sender.close(); await receiver.close(); }
++});
++
++test('renewal reloads local trust on every request, including ephemeral-to-permanent transition', async () => {
++  const lnd = await listen();
++  const path = join(root, 'lifecycle.cert');
++  try {
++    copyFileSync(trusted.certPath, path + '.tmp');
++    const opts = options(lnd.url, path, { allowEphemeral: true });
++    assert.deepEqual(await request(opts), { ok: true });
++    copyFileSync(impostor.certPath, path);
++    assert.deepEqual(await request(opts), { ok: true }, 'temporary certificate remains trusted during transition');
++    lnd.server.setSecureContext({ key: impostor.key, cert: impostor.cert });
++    assert.deepEqual(await request(opts), { ok: true }, 'new permanent certificate is trusted');
++    rmSync(path + '.tmp');
++    assert.deepEqual(await request(opts), { ok: true });
++    lnd.server.setSecureContext({ key: trusted.key, cert: trusted.cert });
++    await rejects(request(opts));
++    copyFileSync(trusted.certPath, path);
++    assert.deepEqual(await request(opts), { ok: true }, 'renewal needs no RTL restart');
++    assert.equal(lnd.seen.length, 5);
++  } finally { await lnd.close(); }
++});
++
++test('generic HTTPS uses public PKI and ignores insecure legacy options', async () => {
++  const lnd = await listen();
++  try {
++    const opts = options(lnd.url); delete opts.lndTls;
++    await rejects(request(opts));
++    assert.deepEqual(lnd.seen, []);
++  } finally { await lnd.close(); }
++});
++
++test('background backups and invoice/payment subscriptions reject an impostor and preserve backups', async () => {
++  const lnd = await listen(impostor);
++  const backup = join(root, 'channel-all.bak');
++  writeFileSync(backup, 'existing backup');
++  writeFileSync(join(root, 'admin.macaroon'), credential);
++  const node = { index: 999, lnNode: 'synthetic', lnImplementation: 'LND',
++    authentication: { tlsCertPath: trusted.certPath, macaroonPath: root },
++    settings: { lnServerUrl: lnd.url, channelBackupPath: root, logLevel: 'ERROR' } };
++  const logs = [];
++  const oldLog = Common.logger.log;
++  const oldSend = WSServer.sendErrorToAllLNClients;
++  Common.logger.log = (entry) => logs.push(entry);
++  WSServer.sendErrorToAllLNClients = (entry) => logs.push(entry);
++  try {
++    Common.getAllNodeAllChannelBackup(node);
++    const opts = LNDWSClient.setOptionsForSelNode(node);
++    assert.deepEqual(opts.lndTls, lndTlsOptions(node).lndTls);
++    LNDWSClient.subscribeToInvoice(opts, node, 'synthetic-invoice');
++    LNDWSClient.subscribeToPayment(opts, node, 'synthetic-payment');
++    const pending = await LNDWSClient.fetchUnpaidInvoices(node);
++    assert.ok(pending.error);
++    for (let n = 0; n < 100 && logs.filter((e) => typeof e === 'string' || e.error).length < 4; n++) {
++      await new Promise((resolve) => setTimeout(resolve, 20));
++    }
++    assert.deepEqual(lnd.seen, []);
++    assert.equal(readFileSync(backup, 'utf8'), 'existing backup');
++    assert.ok(logs.length >= 4);
++    assert.ok(!JSON.stringify(logs).includes(Buffer.from(credential).toString('hex')));
++    assert.ok(!JSON.stringify(logs).includes(credential));
++  } finally { Common.logger.log = oldLog; WSServer.sendErrorToAllLNClients = oldSend; await lnd.close(); }
++});
+diff --git a/test/backend/lnd-wallet.test.mjs b/test/backend/lnd-wallet.test.mjs
+index e778b35..2ba6b62 100644
+--- a/test/backend/lnd-wallet.test.mjs
++++ b/test/backend/lnd-wallet.test.mjs
+@@ -1,6 +1,7 @@
+ import assert from 'node:assert/strict';
+ import { readFileSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+ import { createServer } from 'node:http';
++import { createServer as createLndServer, tlsCertPath } from '../helpers/lnd-https.mjs';
+ import { tmpdir } from 'node:os';
+ import { join } from 'node:path';
+ import test, { after } from 'node:test';
+@@ -20,7 +21,7 @@ after(() => rmSync(tempDir, { recursive: true, force: true }));
+ 
+ const startFakeLnd = async (reply = {}) => {
+   const seen = [];
+-  const server = createServer((req, res) => {
++  const server = createLndServer((req, res) => {
+     let body = '';
+     req.on('data', (chunk) => { body += chunk; });
+     req.on('end', () => {
+@@ -30,7 +31,7 @@ const startFakeLnd = async (reply = {}) => {
+     });
+   });
+   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+-  const url = `http://127.0.0.1:${server.address().port}`;
++  const url = `https://127.0.0.1:${server.address().port}`;
+   return { url, seen, close: () => new Promise((resolve) => server.close(resolve)) };
+ };
+ 
+@@ -38,7 +39,7 @@ const buildRequest = (url, { params = {}, logLevel = 'ERROR', logFile, ...rest }
+   session: {
+     selectedNode: {
+       index: 1, lnNode: 'test-node', lnImplementation: 'LND', lnVersion: '0.18.0',
+-      authentication: { options: { url: '', rejectUnauthorized: false, json: true, headers: { 'Grpc-Metadata-macaroon': 'mac' } } },
++      authentication: { tlsCertPath, options: { url: '', rejectUnauthorized: false, json: true, headers: { 'Grpc-Metadata-macaroon': 'mac' } } },
+       settings: { lnServerUrl: url, logLevel, logFile }
+     }
+   },
+diff --git a/test/backend/node-implementation-guard.test.mjs b/test/backend/node-implementation-guard.test.mjs
+index 91ef70a..90bb598 100644
+--- a/test/backend/node-implementation-guard.test.mjs
++++ b/test/backend/node-implementation-guard.test.mjs
+@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
+ import { createHash } from 'node:crypto';
+ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+ import { createServer as createHttpServer } from 'node:http';
++import { createServer as createLndServer, tlsCertPath } from '../helpers/lnd-https.mjs';
+ import { createServer } from 'node:net';
+ import { tmpdir } from 'node:os';
+ import { dirname, join } from 'node:path';
+@@ -34,9 +35,9 @@ const freePort = () => new Promise((resolve, reject) => {
+ });
+ 
+ // A stand-in node API: records each request path and answers with the given status and body.
+-const startStub = (status, body) => new Promise((resolve) => {
++const startStub = (status, body, secure = false) => new Promise((resolve) => {
+   const hits = [];
+-  const server = createHttpServer((req, res) => {
++  const server = (secure ? createLndServer : createHttpServer)((req, res) => {
+     hits.push(req.method + ' ' + req.url);
+     req.resume();
+     req.on('end', () => {
+@@ -44,7 +45,7 @@ const startStub = (status, body) => new Promise((resolve) => {
+       res.end(JSON.stringify(body));
+     });
+   });
+-  server.listen(0, '127.0.0.1', () => resolve({ server, hits, url: 'http://127.0.0.1:' + server.address().port }));
++  server.listen(0, '127.0.0.1', () => resolve({ server, hits, url: (secure ? 'https' : 'http') + '://127.0.0.1:' + server.address().port }));
+ });
+ 
+ const writeConfig = (port) => {
+@@ -77,7 +78,7 @@ const writeConfig = (port) => {
+       index: 2,
+       lnNode: 'LND',
+       lnImplementation: 'LND',
+-      authentication: { macaroonPath: join(dir, 'macaroon'), configPath: '' },
++      authentication: { tlsCertPath, macaroonPath: join(dir, 'macaroon'), configPath: '' },
+       settings: { ...settings, lnServerUrl: stubs.lnd.url, channelBackupPath: join(dir, 'backup-2') }
+     }, {
+       index: 3,
+@@ -171,7 +172,7 @@ const createInvoice = (browser, withToken) => browser.call('POST', '/rtl/api/cln
+ 
+ before(async () => {
+   stubs.cln = await startStub(201, { payment_hash: 'ab', bolt11: 'lnbc1' });
+-  stubs.lnd = await startStub(404, { code: 5, message: 'Not Found', details: [] });
++  stubs.lnd = await startStub(404, { code: 5, message: 'Not Found', details: [] }, true);
+   stubs.ecl = await startStub(200, { version: '0.14.2', nodeId: '02ab', publicAddresses: [] });
+   const port = await freePort();
+   configDir = writeConfig(port);
+diff --git a/test/backend/query-params.test.mjs b/test/backend/query-params.test.mjs
+index ae9835b..945bbde 100644
+--- a/test/backend/query-params.test.mjs
++++ b/test/backend/query-params.test.mjs
+@@ -1,5 +1,6 @@
+ import assert from 'node:assert/strict';
+ import { createServer } from 'node:http';
++import { createServer as createLndServer, tlsCertPath } from '../helpers/lnd-https.mjs';
+ import test from 'node:test';
+ 
+ import { closeChannel } from '../../backend/controllers/lnd/channels.js';
+@@ -13,9 +14,9 @@ import { loopInQuote, loopInTermsAndQuotes, loopOutQuote, loopOutTermsAndQuotes
+ // containing "&" smuggle extra parameters upstream. Each handler now builds its query through
+ // options.qs, omits what is absent and rejects what is malformed with a 400 of its own.
+ 
+-const startFakeServer = async (reply = () => ({})) => {
++const startFakeServer = async (reply = () => ({}), secure = true) => {
+   const seen = [];
+-  const server = createServer((req, res) => {
++  const server = (secure ? createLndServer : createServer)((req, res) => {
+     let body = '';
+     req.on('data', (chunk) => { body += chunk; });
+     req.on('end', () => {
+@@ -25,7 +26,7 @@ const startFakeServer = async (reply = () => ({})) => {
+     });
+   });
+   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+-  const url = `http://127.0.0.1:${server.address().port}`;
++  const url = `${secure ? "https" : "http"}://127.0.0.1:${server.address().port}`;
+   return { url, seen, close: () => new Promise((resolve) => server.close(resolve)) };
+ };
+ 
+@@ -33,7 +34,7 @@ const buildRequest = (url, { query = {}, params = {}, lnVersion = '0.18.0' } = {
+   session: {
+     selectedNode: {
+       index: 1, lnNode: 'test-node', lnImplementation: 'LND', lnVersion,
+-      authentication: { options: { url: '', rejectUnauthorized: false, json: true, headers: { 'Grpc-Metadata-macaroon': 'mac' } } },
++      authentication: { tlsCertPath, options: { url: '', rejectUnauthorized: false, json: true, headers: { 'Grpc-Metadata-macaroon': 'mac' } } },
+       settings: { lnServerUrl: url, swapServerUrl: url, logLevel: 'ERROR' }
+     }
+   },
+@@ -159,7 +160,7 @@ test('getUTXOs (0.14+): max_confs is sent in the JSON body only when given', asy
+ 
+ // Options are built per request from the session (#1714), so no prior loopInfo is needed.
+ test('loop quote handlers work without a prior loopInfo call', async () => {
+-  const loop = await startFakeServer();
++  const loop = await startFakeServer(undefined, false);
+   try {
+     const res = await run(loopOutQuote, buildRequest(loop.url, { params: { amount: '1000' } }));
+     assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+@@ -174,7 +175,7 @@ const LOOP_QUOTES = [
+ 
+ for (const q of LOOP_QUOTES) {
+   test(`${q.name}: omitted or empty deadline is left out, empty or zero targetConf keeps the default`, async () => {
+-    const loop = await startFakeServer();
++    const loop = await startFakeServer(undefined, false);
+     try {
+       const res = await run(q.handler, buildRequest(loop.url, { params: { amount: '250000' } }));
+       assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+@@ -188,7 +189,7 @@ for (const q of LOOP_QUOTES) {
+   });
+ 
+   test(`${q.name}: malformed amount or deadline is refused with 400`, async () => {
+-    const loop = await startFakeServer();
++    const loop = await startFakeServer(undefined, false);
+     try {
+       const before = loop.seen.length;
+       const bad1 = await run(q.handler, buildRequest(loop.url, { params: { amount: '1&x=2' } }));
+@@ -207,7 +208,7 @@ const LOOP_TERMS = [
+ 
+ for (const t of LOOP_TERMS) {
+   test(`${t.name}: quotes the min and max amounts separately with the given query`, async () => {
+-    const loop = await startFakeServer((path) => (path.endsWith('/terms') ? { min_swap_amount: '1000', max_swap_amount: '9000' } : {}));
++    const loop = await startFakeServer((path) => (path.endsWith('/terms') ? { min_swap_amount: '1000', max_swap_amount: '9000' } : {}), false);
+     try {
+       const res = await run(t.handler, buildRequest(loop.url, { query: { targetConf: '3', swapPublicationDeadline: '1700000000000' } }));
+       assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+@@ -221,7 +222,7 @@ for (const t of LOOP_TERMS) {
+   });
+ 
+   test(`${t.name}: malformed targetConf is refused with 400 before the terms call`, async () => {
+-    const loop = await startFakeServer();
++    const loop = await startFakeServer(undefined, false);
+     try {
+       const before = loop.seen.length;
+       const res = await run(t.handler, buildRequest(loop.url, { query: { targetConf: '2.5' } }));
+diff --git a/test/backend/rtlconf.test.mjs b/test/backend/rtlconf.test.mjs
+index e54b419..af88c55 100644
+--- a/test/backend/rtlconf.test.mjs
++++ b/test/backend/rtlconf.test.mjs
+@@ -1747,3 +1747,41 @@ test('getExplorerTransaction URL-encodes the txid path segment', async () => {
+     await new Promise((resolve) => server.close(resolve));
+   }
+ });
++
++test('settings saves preserve server-owned TLS trust and credential origin, hiding trust fields from responses', () => {
++  const dir = mkdtempSync(join(tmpdir(), 'rtlconf-tls-'));
++  const original = {
++    defaultNodeIndex: 1, dbDirectoryPath: dir,
++    SSO: { rtlSSO: 0, rtlCookiePath: '', logoutRedirectLink: '' },
++    nodes: [{ index: 1, lnNode: 'LND', lnImplementation: 'LND',
++      authentication: { macaroonPath: '/lnd/mac', tlsCertPath: '/lnd/tls.cert', tlsAllowEphemeral: true },
++      settings: { lnServerUrl: 'https://localhost:8080', themeMode: 'DAY' } }]
++  };
++  try {
++    Common.appConfig = clone({ ...original, rtlConfFilePath: dir });
++    Common.nodes = clone(original.nodes); Common.selectedNode = Common.nodes[0];
++    writeFileSync(join(dir, 'RTL-Config.json'), JSON.stringify(original));
++    const input = clone(original);
++    input.nodes[0].authentication = { tlsCertPath: '/attacker/cert', tlsAllowEphemeral: false };
++    input.nodes[0].settings = { themeMode: 'NIGHT', lnServerUrl: 'http://attacker.invalid:8080' };
++    let response;
++    updateApplicationSettings({ body: input, session: { selectedNode: Common.selectedNode } }, {
++      status: (code) => { assert.equal(code, 201); return { json: (body) => { response = body; } }; }
++    }, null);
++    const persisted = JSON.parse(readFileSync(join(dir, 'RTL-Config.json'), 'utf8')).nodes[0];
++    for (const node of [Common.nodes[0], Common.appConfig.nodes[0], persisted]) {
++      assert.equal(node.authentication.tlsCertPath, '/lnd/tls.cert');
++      assert.equal(node.authentication.tlsAllowEphemeral, true);
++      assert.equal(node.settings.lnServerUrl, 'https://localhost:8080');
++    }
++    assert.equal(response.nodes[0].authentication.tlsCertPath, undefined);
++    assert.equal(response.nodes[0].authentication.tlsAllowEphemeral, undefined);
++    updateNodeSettings({ body: { authentication: input.nodes[0].authentication, settings: input.nodes[0].settings },
++      session: { selectedNode: Common.nodes[0] } }, {
++      status: (code) => { assert.equal(code, 201); return { json: () => {} }; }
++    }, null);
++    assert.equal(Common.nodes[0].authentication.tlsCertPath, '/lnd/tls.cert');
++    assert.equal(Common.nodes[0].authentication.tlsAllowEphemeral, true);
++    assert.equal(Common.nodes[0].settings.lnServerUrl, 'https://localhost:8080');
++  } finally { rmSync(dir, { recursive: true, force: true }); }
++});
+diff --git a/test/helpers/lnd-https.mjs b/test/helpers/lnd-https.mjs
+new file mode 100644
+index 0000000..2291824
+--- /dev/null
++++ b/test/helpers/lnd-https.mjs
+@@ -0,0 +1,43 @@
++import { execFileSync } from 'node:child_process';
++import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
++import { createServer as httpsServer } from 'node:https';
++import { tmpdir } from 'node:os';
++import { join } from 'node:path';
++
++const root = mkdtempSync(join(tmpdir(), 'rtl-tls-fixtures-'));
++let next = 0;
++process.on('exit', () => rmSync(root, { recursive: true, force: true }));
++
++export function certificate({ san = 'DNS:localhost,IP:127.0.0.1,IP:::1', expired = false } = {}) {
++  const prefix = join(root, String(next++));
++  const keyPath = prefix + '.key';
++  const certPath = prefix + '.crt';
++  const base = ['req', '-new', '-newkey', 'ec', '-pkeyopt', 'ec_paramgen_curve:P-256', '-nodes', '-keyout', keyPath, '-subj', '/CN=RTL synthetic TLS fixture'];
++  if (expired) {
++    execFileSync('openssl', [...base, '-out', prefix + '.csr'], { stdio: 'ignore' });
++    writeFileSync(prefix + '.index', '');
++    writeFileSync(prefix + '.serial', '01\n');
++    writeFileSync(prefix + '.cnf', `[ca]
++ default_ca = fixture
++[fixture]
++ database = ${prefix}.index
++ serial = ${prefix}.serial
++ new_certs_dir = ${root}
++ default_md = sha256
++ policy = names
++ x509_extensions = extensions
++[names]
++ commonName = supplied
++[extensions]
++ subjectAltName = ${san}
++`);
++    execFileSync('openssl', ['ca', '-batch', '-selfsign', '-config', prefix + '.cnf', '-in', prefix + '.csr', '-keyfile', keyPath, '-startdate', '20000101000000Z', '-enddate', '20010101000000Z', '-out', certPath, '-notext'], { stdio: 'ignore' });
++  } else {
++    execFileSync('openssl', [...base, '-x509', '-days', '2', '-addext', 'subjectAltName=' + san, '-out', certPath], { stdio: 'ignore' });
++  }
++  return { keyPath, certPath, key: readFileSync(keyPath), cert: readFileSync(certPath) };
++}
++
++const pair = certificate();
++export const tlsCertPath = pair.certPath;
++export const createServer = (handler) => httpsServer({ key: pair.key, cert: pair.cert }, handler);

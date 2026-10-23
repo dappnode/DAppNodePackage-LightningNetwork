@@ -11,17 +11,19 @@
       "index": 1,
       "lnNode": "Node 1",
       "lnImplementation": "LND",
-      "Authentication": {
-        "macaroonPath": "/root/.lnd/data/chain/bitcoin/mainnet",
-        "configPath": "/root/.lnd/lnd.conf"
+      "authentication": {
+        "tlsCertPath": "/shared/tls.cert",
+        "tlsAllowEphemeral": true,
+        "macaroonPath": "/shared",
+        "configPath": ""
       },
-      "Settings": {
+      "settings": {
         "userPersona": "MERCHANT",
         "themeMode": "NIGHT",
         "themeColor": "TEAL",
-        "channelBackupPath": "/root/backup/node-1",
+        "channelBackupPath": "/RTL/backup/node-1",
         "logLevel": "ERROR",
-        "lnServerUrl": "https://localhost:8080",
+        "lnServerUrl": "https://lnd.lightning-network.dappnode:8080",
         "fiatConversion": false
       }
     }

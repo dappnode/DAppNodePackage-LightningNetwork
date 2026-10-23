@@ -1,23 +1,35 @@
 version: "3.4"
 services:
-  lightning-network.dnp.dappnode.eth:
-    image: "lightning-network.dnp.dappnode.eth:0.4.4"
-    build: ./src
+  lnd:
+    image: "lnd.lightning-network.dnp.dappnode.eth:0.5.0"
+    build: ./buildLnd
     volumes:
       - "lndconfig_data:/root/.lnd/"
-      - "lndconfig_backup:/rtl/backup/"
+      - "lnd_shared:/shared"
     ports:
       - "9735:9735"
     environment:
-      - APP_PASSWORD=changeme
       - RPCUSER=dappnode
       - RPCPASS=dappnode
       - BITCOIND_HOST=bitcoin.dappnode
+      - BITCOIND_RPCPORT=
+      - BITCOIND_RPC_POLLING=false
+      - LND_MIGRATION_CONFIRMED=false
       - NETWORK=mainnet
       - ALIAS=
       - COLOR=#5ACDC5
       - EXT_IP=
     restart: always
+  rtl:
+    image: "rtl.lightning-network.dnp.dappnode.eth:0.5.0"
+    build: ./buildRtl
+    volumes:
+      - "lnd_shared:/shared:ro"
+      - "lndconfig_backup:/RTL/backup/"
+    environment:
+      - APP_PASSWORD=
+    restart: always
 volumes:
   lndconfig_data: {}
   lndconfig_backup: {}
+  lnd_shared: {}

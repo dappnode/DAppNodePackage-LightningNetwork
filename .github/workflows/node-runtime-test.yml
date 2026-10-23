@@ -1,0 +1,21 @@
+name: Split Lightning runtime test
+on: [pull_request, workflow_dispatch]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t codex/lightning-lnd:split-20261023 buildLnd
+      - run: docker build -t codex/lightning-rtl:split-20261023 buildRtl
+      - run: python3 tests/runtime-smoke.py --output /tmp/lightning-runtime-private
+      - run: docker build -f tests/Dockerfile.bitcoin-regtest -t codex/bitcoin-regtest:31.1 tests
+      - run: docker build -f tests/Dockerfile.bitcoin-regtest --build-arg BITCOIN_VERSION=25.2 --build-arg BITCOIN_SHA256=8d8c387e597e0edfc256f0bbace1dac3ad1ebf4a3c06da3e2975fda333817dea -t codex/bitcoin-regtest:25.2 tests
+      - run: docker build -f tests/Dockerfile.lnd-legacy -t codex/lnd-legacy-regtest:0.14.1 tests
+      - run: docker build -f tests/Dockerfile.lnd-legacy --build-arg LND_VERSION=v0.15.5-beta --build-arg LND_SHA256=fcdd621a068ab71d0476a7a9ff77fa71f68d230f8bbebe573a70a265ffde4d80 -t codex/lnd-legacy-regtest:0.15.5 tests
+      - run: python3 tests/regtest-smoke.py --fresh --output /tmp/lightning-fresh-private
+      - run: python3 tests/regtest-smoke.py --fresh --encrypted-tls --output /tmp/lightning-encrypted-private
+      - run: python3 tests/regtest-smoke.py --bitcoin-image codex/bitcoin-regtest:25.2 --bridge-image codex/lnd-legacy-regtest:0.15.5 --output /tmp/lightning-staged-private
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.4
+      - run: npx --yes @dappnode/dappnodesdk@0.3.55 build --skip_save --skip_upload --arch linux/amd64

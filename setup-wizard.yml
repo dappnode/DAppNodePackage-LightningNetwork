@@ -1,0 +1,20 @@
+version: "2"
+fields:
+  - id: rtl_password
+    target:
+      type: environment
+      name: APP_PASSWORD
+      service: rtl
+    title: RTL password
+    description: Choose the password you will use to sign in to Ride The Lightning.
+    secret: true
+    required: true
+    pattern: '^(?!(?:changeme|dappnode)$).{8,}$'
+    patternErrorMessage: Use at least eight characters and avoid the default passwords.
+  - id: alias
+    target:
+      type: environment
+      name: ALIAS
+      service: lnd
+    title: Node alias
+    description: Your Lightning node alias is public.
