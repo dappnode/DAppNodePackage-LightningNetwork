@@ -2,7 +2,10 @@ version: "3.4"
 services:
   lightning-network.dnp.dappnode.eth:
     image: "lightning-network.dnp.dappnode.eth:0.4.4"
-    build: ./src
+    build:
+      context: ./src
+      args:
+        LND_VERSION: v0.14.1-beta
     volumes:
       - "lndconfig_data:/root/.lnd/"
       - "lndconfig_backup:/rtl/backup/"
